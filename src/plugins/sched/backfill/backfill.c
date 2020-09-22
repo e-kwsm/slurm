@@ -4445,7 +4445,7 @@ static int _foreach_het_job_full(void *x, void *arg)
 
 /*
  * Return TRUE if we have expected start times for all components of a hetjob
- * and all components are valid and runable.
+ * and all components are valid and runnable.
  *
  * NOTE: This should never happen, but we will also start the job if all of the
  * other components are already running,
