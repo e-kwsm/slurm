@@ -190,7 +190,7 @@
 #define RESV_FREE_STR_TRES_NODE 0x00000020
 #define RESV_FREE_STR_GROUP     0x00000040
 
-/* These defines have to be here to avoid circular dependancy with
+/* These defines have to be here to avoid circular dependency with
  * switch.h
  */
 #ifndef __switch_jobinfo_t_defined
@@ -207,7 +207,7 @@
  *
  * IMPORTANT: ADD NEW MESSAGE TYPES TO THE *END* OF ONE OF THESE NUMBERED
  * SECTIONS. ADDING ONE ELSEWHERE WOULD SHIFT THE VALUES OF EXISTING MESSAGE
- * TYPES IN CURRENT PROGRAMS AND PREVENT BACKWARD COMPATABILITY.
+ * TYPES IN CURRENT PROGRAMS AND PREVENT BACKWARD COMPATIBILITY.
  */
 typedef enum {
 	REQUEST_NODE_REGISTRATION_STATUS = 1001,

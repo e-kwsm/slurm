@@ -3995,7 +3995,7 @@ static void _slurm_rpc_update_job(slurm_msg_t * msg)
 	unlock_slurmctld(fed_read_lock);
 
 	START_TIMER;
-	/* job_desc_msg->user_id is set when the uid has been overriden with
+	/* job_desc_msg->user_id is set when the uid has been overridden with
 	 * -u <uid> or --uid=<uid>. NO_VAL is default. Verify the request has
 	 * come from an admin */
 	if (job_desc_msg->user_id != NO_VAL) {

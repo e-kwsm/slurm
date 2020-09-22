@@ -128,7 +128,7 @@ Code taken from common/slurm_protocol_api.c
 }
 
 // if ret_list is null or list_count is 0 means there may have been an error
-// this fuction will check to make sure if there were supposed to be forwards
+// this function will check to make sure if there were supposed to be forwards
 // we handle the return code for the messages
 if(!ret_list || list_count(ret_list) == 0) {
 	no_resp_forwards(&req->forward, &ret_list, errno);

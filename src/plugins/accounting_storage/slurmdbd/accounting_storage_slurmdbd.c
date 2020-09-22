@@ -326,7 +326,7 @@ static void *_set_db_inx_thread(void *no_data)
 			}
 
 			/*
-			 * We only want to destory the pointer
+			 * We only want to destroy the pointer
 			 * here not the contents so call special function
 			 * _partial_destroy_dbd_job_start.
 			 */

@@ -846,7 +846,7 @@ int jobacct_storage_p_job_start(void *db_conn, job_record_t *job_ptr)
 Note that a job is about to begin execution or has just changed size.
 The job's state will include the JOB_RESIZING flag if and only if it has
 just changed size. Otherwise the job is beginning execution for the first time.
-Note the existance of <i>resize_time</i> in the job record if one wishes to
+Note the existence of <i>resize_time</i> in the job record if one wishes to
 record information about a job at each size (i.e. a history of the job as
 its size changes through time).</p>
 <p style="margin-left:.2in"><b>Arguments</b>: <br>
@@ -864,7 +864,7 @@ int jobacct_storage_p_job_complete(void *db_conn, job_record_t *job_ptr)
 Note that a job is about to terminate or change size.
 The job's state will include the JOB_RESIZING flag if and only if it is about
 to change size. Otherwise the job is terminating.
-Note the existance of <i>resize_time</i> in the job record if one wishes to
+Note the existence of <i>resize_time</i> in the job record if one wishes to
 record information about a job at each size (i.e. a history of the job as
 its size changes through time).</p>
 <p style="margin-left:.2in"><b>Arguments</b>: <br>

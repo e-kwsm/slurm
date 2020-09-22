@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  allocate.c - allocate nodes for a job or step with supplied contraints
+ *  allocate.c - allocate nodes for a job or step with supplied constraints
  *****************************************************************************
  *  Copyright (C) 2002-2007 The Regents of the University of California.
  *  Copyright (C) 2008-2009 Lawrence Livermore National Security.
@@ -1237,7 +1237,7 @@ _accept_msg_connection(int listen_fd, uint16_t msg_type, void **resp)
 }
 
 /* Wait up to sleep_time for RPC from slurmctld indicating resource allocation
- * has occured.
+ * has occurred.
  * IN sleep_time: delay in seconds (0 means unbounded wait)
  * RET -1: error, 0: timeout, 1:ready to read */
 static int _wait_for_alloc_rpc(const listen_t *listen, int sleep_time)

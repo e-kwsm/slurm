@@ -924,7 +924,7 @@ enum ctx_keys {
 				 * level. Jobs will not be co-allocated
 				 * within a board. */
 #define CR_MEMORY	0x0010	/* Memory as consumable resources. Memory is
-				 * not over-commited when selected as a CR. */
+				 * not over-committed when selected as a CR. */
 #define CR_OTHER_CONS_RES    0x0020 /* if layering select plugins use
 				     * cons_res instead of linear (default)
 				     */
@@ -1029,7 +1029,7 @@ enum ctx_keys {
 #define JOB_WAS_RUNNING    0x00100000  /* Job was running */
 #define RESET_ACCRUE_TIME  0x00200000   /* Reset the job's accrue time */
 #define CRON_JOB           0x00400000   /* Job submitted through scrontab */
-#define JOB_MEM_SET        0x00800000	/* Memory limit explicity set by job */
+#define JOB_MEM_SET        0x00800000	/* Memory limit explicitly set by job */
 #define JOB_RESIZED        0x01000000	/* Running job added/removed nodes */
 #define USE_DEFAULT_ACCT   0x02000000	/* Job submitted to default account */
 #define USE_DEFAULT_PART   0x04000000	/* Job submitted to default partition */
@@ -2875,7 +2875,7 @@ typedef struct {
 	uint16_t slurmctld_syslog_debug; /* slurmctld output to
 					  * local logfile and syslog*/
 	uint16_t slurmctld_timeout;/* seconds that backup controller waits
-				    * on non-responding primarly controller */
+				    * on non-responding primary controller */
 	char *slurmctld_params;	/* SlurmctldParameters */
 	uint16_t slurmd_debug;	/* slurmd logging level */
 	char *slurmd_logfile;	/* where slurmd error log gets written */
@@ -3431,7 +3431,7 @@ typedef struct job_step_kill_msg {
 #define KILL_JOB_RESV	 0x0100	/* Job is willing to run on nodes in a
 				 * magnetic reservation. */
 
-/* Use top bit of uint16_t in conjuction with KILL_* flags to indicate signal
+/* Use top bit of uint16_t in conjunction with KILL_* flags to indicate signal
  * has been sent to job previously. Does not need to be passed to slurmd. */
 #define WARN_SENT	 0x8000  /* warn already sent, clear this on requeue */
 

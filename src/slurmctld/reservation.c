@@ -5590,7 +5590,7 @@ end_it:
  * Determine if a job can start now based only upon reservations
  *
  * IN job_ptr      - job to test
- * RET	SLURM_SUCCESS if runable now, otherwise an error code
+ * RET	SLURM_SUCCESS if runnable now, otherwise an error code
  */
 extern int job_test_resv_now(job_record_t *job_ptr)
 {
@@ -5971,7 +5971,7 @@ static void _free_constraint_planning(constraint_planning_t* sched)
  * - inserted
  * - added to a previously added slot, if it corresponds to the same
  *   period
- * - shrinked if it overlaps temporarily a previously slot
+ * - shrunk if it overlaps temporarily a previously slot
  *   (in that case it will result in a new slot insertion and an
  *    already defined slot update with the addition of the value)
  * - splitted in two chunks if it is nested in a previously slot
@@ -6222,7 +6222,7 @@ extern uint32_t job_test_watts_resv(job_record_t *job_ptr, time_t when,
  *		      overlap with an advanced reservation, indicates that
  *		      resources were removed from availability to the job
  * IN reboot    - true if node reboot required to start job
- * RET	SLURM_SUCCESS if runable now
+ * RET	SLURM_SUCCESS if runnable now
  *	ESLURM_RESERVATION_ACCESS access to reservation denied
  *	ESLURM_RESERVATION_INVALID reservation invalid
  *	ESLURM_INVALID_TIME_VALUE reservation invalid at time "when"

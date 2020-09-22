@@ -168,7 +168,7 @@ extern int addto_update_list(List update_list, slurmdb_update_type_t type,
 	list_iterator_destroy(itr);
 
 	if (update_object) {
-		/* here we prepend primarly for remove association
+		/* here we prepend primarily for remove association
 		   since parents need to be removed last, and they are
 		   removed first in the calling code */
 		if (type == SLURMDB_UPDATE_FEDS) {
@@ -392,7 +392,7 @@ extern int cluster_first_reg(char *host, uint16_t port, uint16_t rpc_version)
 		out_msg.data = &update;
 		slurm_send_node_msg(fd, &out_msg);
 		/* We probably need to add matching recv_msg function
-		 * for an arbitray fd or should these be fire
+		 * for an arbitrary fd or should these be fire
 		 * and forget?  For this, that we can probably
 		 * forget about it */
 		close(fd);

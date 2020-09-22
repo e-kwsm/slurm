@@ -495,7 +495,7 @@ _get_proc_mapping(const mpi_plugin_client_info_t *job)
 		xstrcat(mapping, ")");
 	} else if (task_dist == SLURM_DIST_ARBITRARY) {
 		/*
-		 * MPICH2 will think that each task runs on a seperate node.
+		 * MPICH2 will think that each task runs on a separate node.
 		 * The program will run, but no SHM will be used for
 		 * communication.
 		 */

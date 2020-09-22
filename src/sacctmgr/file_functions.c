@@ -1873,7 +1873,7 @@ extern void load_sacctmgr_cfg_file (int argc, char **argv)
 					rc = SLURM_ERROR;
 					break;
 				}
-				/* This needs to be commited or
+				/* This needs to be committed or
 				   problems may arise */
 				slurmdb_connection_commit(db_conn, 1);
 			}
@@ -1928,7 +1928,7 @@ extern void load_sacctmgr_cfg_file (int argc, char **argv)
 					file_opts = NULL;
 					break;
 				}
-				/* This needs to be commited or
+				/* This needs to be committed or
 				   problems may arise */
 				slurmdb_connection_commit(db_conn, 1);
 				set = 1;

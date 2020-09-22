@@ -53,7 +53,7 @@ extern void slurm_lua_stack_dump(const char *plugin,
  * This function loads a new lua state object.
  *
  * The new lua state object will be initialized and assigned to *L depending
- * on its mtime vs *load_time and whether the new script is succesfully loaded.
+ * on its mtime vs *load_time and whether the new script is successfully loaded.
  * If it cannot load *L won't be touched and SLURM_ERROR or SUCCESS will be
  * returned depending on if *L was NULL or the old script can still be in use.
  *
@@ -67,7 +67,7 @@ extern void slurm_lua_stack_dump(const char *plugin,
  *
  * Returns:
  * SLURM_SUCCESS - if a correct Lua object is set.
- * SLURM_ERROR - an error occured, and there's no lua state loaded.
+ * SLURM_ERROR - an error occurred, and there's no lua state loaded.
  */
 extern int slurm_lua_loadscript(lua_State **L, const char *plugin,
 				const char *script_path,

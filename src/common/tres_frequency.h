@@ -135,7 +135,7 @@ extern void tres_freq_reset(stepd_step_rec_t *job);
  * Typically called to produce string for a log or reporting utility.
  *
  *
- * When label!=NULL, info message is put to log. This is convienient for
+ * When label!=NULL, info message is put to log. This is convenient for
  *      inserting debug calls to verify values in structures or messages.
  * noval_str==NULL allows missing parameters not to be reported.
  * freq_str is a buffer to hold the composite string for all input values.

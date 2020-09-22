@@ -391,7 +391,7 @@ char *xstrdup(const char *str)
 /*
  * Give me a copy of the string as if it were printf.
  *   fmt (IN)		format of string and args if any
- *   RETURN		copy of formated string
+ *   RETURN		copy of formatted string
  */
 char *xstrdup_printf(const char *fmt, ...)
 {
@@ -644,7 +644,7 @@ char *xstrcasestr(const char *haystack, const char *needle)
  * functions can do va_start() and invoke this function.
  *
  *   fmt (IN)		format of string and args if any
- *   RETURN		copy of formated string
+ *   RETURN		copy of formatted string
  */
 static size_t _xstrdup_vprintf(char **str, const char *fmt, va_list ap)
 {

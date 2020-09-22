@@ -2189,7 +2189,7 @@ tryagain:
 		reroute_msg_t *rr_msg = (reroute_msg_t *)response_msg->data;
 
 		/*
-		 * Don't expect mutliple hops but in the case it does
+		 * Don't expect multiple hops but in the case it does
 		 * happen, free the previous rr cluster_rec.
 		 */
 		if (comm_cluster_rec &&
@@ -2325,7 +2325,7 @@ int slurm_send_only_node_msg(slurm_msg_t *req)
 	 * the poll() should hit POLLERR which gives the TICOUTQ count as an
 	 * additional diagnostic element.
 	 *
-	 * The steps below may result in a false-positive on occassion, in
+	 * The steps below may result in a false-positive on occasion, in
 	 * which case the code path above may opt to retransmit an already
 	 * received message. If this is a concern, you should not be using
 	 * this function.
@@ -2536,7 +2536,7 @@ int slurm_send_recv_rc_msg_only_one(slurm_msg_t *req, int *rc, int timeout)
 /*
  * Send message to controller and get return code.
  * Make use of slurm_send_recv_controller_msg(), which handles
- * support for backup controller and retry during transistion.
+ * support for backup controller and retry during transition.
  * IN req - request to send
  * OUT rc - return code
  * IN comm_cluster_rec	- Communication record (host/port/version)/

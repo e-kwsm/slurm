@@ -1690,7 +1690,7 @@ static int _get_users(slurmdbd_conn_t *slurmdbd_conn,
 		|| (user_cond->assoc_cond->only_defs))) {
 		List cluster_list = user_cond->assoc_cond->cluster_list;
 		/* load up with just this cluster to query against
-		 * since befor 2.2 we had only 1 default account so
+		 * since before 2.2 we had only 1 default account so
 		 * send the default for this cluster. */
 		if (!cluster_list) {
 			cluster_list = list_create(NULL);

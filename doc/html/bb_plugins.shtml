@@ -132,7 +132,7 @@ A Slurm errno.
 void bb_p_job_set_tres_cnt(job_record_t *job_ptr,
 uint64_t *tres_cnt, bool locked);
 <p style="margin-left:.2in"><b>Description</b>:<br>
-Set the tres count in the job recored.
+Set the tres count in the job recorded.
 <p style="margin-left:.2in"><b>Arguments</b>: <br>
 <span class="commandline">job_ptr</span>
 (input) Job record to be set.<br>
@@ -172,7 +172,7 @@ Determine if a job's burst buffer stage-in is complete.
 <p style="margin-left:.2in"><b>Returns</b>: <br>
 0 stage-in is underway<br>
 1 stage-in complete<br>
--1 state-in not started or burst buffer in some unexpeced state.
+-1 state-in not started or burst buffer in some unexpected state.
 
 <p class="commandline">
 int bb_p_job_begin(job_record_t *job_ptr)

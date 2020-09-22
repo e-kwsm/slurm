@@ -135,7 +135,7 @@ pmixp_coll_t *pmixp_state_coll_get(pmixp_coll_type_t type,
 	/* if we failed to find the collective we most probably need
      * to create a new structure. To do so we need to lock the
 	 * whole state and try to search again to exclude situation where
-     * concurent thread has already created it while we were doing the
+     * concurrent thread has already created it while we were doing the
 	 * first search */
 
 	if (pmixp_coll_belong_chk(procs, nprocs)) {

@@ -170,7 +170,7 @@ if {[get_config_param "AccountingStorageType"] ne "accounting_storage/slurmdbd"}
 # 10) Do all the test with Q[s,e][S,E,P,R,C] with a Cancelled/Completed job.
 #
 # The expected behavior of default values of -S and -E are the ones defined
-# in the fucntion slurmdb_job_cond_def_start_end():
+# in the function slurmdb_job_cond_def_start_end():
 #
 #   - with -j and -s:
 #     -S defaults to Epoch 0

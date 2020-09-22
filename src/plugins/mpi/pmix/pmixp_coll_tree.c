@@ -144,7 +144,7 @@ static void _reset_coll_dfwd(pmixp_coll_t *coll)
 	coll->state.tree.dfwd_cb_wait = 0;
 	coll->state.tree.dfwd_status = PMIXP_COLL_TREE_SND_NONE;
 	coll->state.tree.contrib_prnt = false;
-	/* Save the toal service offset */
+	/* Save the total service offset */
 	coll->state.tree.dfwd_offset = get_buf_offset(
 		coll->state.tree.dfwd_buf);
 }
@@ -1071,7 +1071,7 @@ int pmixp_coll_tree_child(pmixp_coll_t *coll, uint32_t peerid,
 	case PMIXP_COLL_TREE_DOWNFWD:
 #ifdef PMIXP_COLL_DEBUG
 		/* It looks like a retransmission attempt when remote side
-		 * identified transmission failure, but we actually successfuly
+		 * identified transmission failure, but we actually successfully
 		 * received the message */
 		PMIXP_DEBUG("%p: contrib for the next coll. nodeid=%u, child=%d seq=%u, coll->seq=%u, state=%s",
 			    coll, peerid, chld_id, seq, coll->seq,
@@ -1186,7 +1186,7 @@ int pmixp_coll_tree_parent(pmixp_coll_t *coll, uint32_t peerid,
 	case PMIXP_COLL_TREE_SYNC:
 	case PMIXP_COLL_TREE_COLLECT:
 		/* It looks like a retransmission attempt when remote side
-		 * identified transmission failure, but we actually successfuly
+		 * identified transmission failure, but we actually successfully
 		 * received the message */
 #ifdef PMIXP_COLL_DEBUG
 		PMIXP_DEBUG("%p: prev contrib nodeid=%u: seq=%u, cur_seq=%u, state=%s",
@@ -1223,7 +1223,7 @@ int pmixp_coll_tree_parent(pmixp_coll_t *coll, uint32_t peerid,
 		break;
 	case PMIXP_COLL_TREE_DOWNFWD:
 		/* It looks like a retransmission attempt when remote side
-		 * identified transmission failure, but we actually successfuly
+		 * identified transmission failure, but we actually successfully
 		 * received the message */
 #ifdef PMIXP_COLL_DEBUG
 		PMIXP_DEBUG("%p: double contrib nodeid=%u seq=%u, cur_seq=%u, state=%s",

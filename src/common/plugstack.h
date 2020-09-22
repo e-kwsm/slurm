@@ -149,7 +149,7 @@ int spank_set_remote_options (job_options_t options);
  *    a *required* plugin callback returns < 0.
  *
  *  A warning is printed if no plugin matches a remote option
- *   in the job_options structure, but the funtion does not return failure.
+ *   in the job_options structure, but the function does not return failure.
  */
 int spank_get_remote_options (job_options_t options);
 
@@ -159,7 +159,7 @@ int spank_get_remote_options (job_options_t options);
  *    a *required* plugin callback returns < 0.
  *
  *  A warning is printed if no plugin matches a remote option
- *   in the job_options structure, but the funtion does not return failure.
+ *   in the job_options structure, but the function does not return failure.
  */
 int spank_get_remote_options_env (char **env);
 

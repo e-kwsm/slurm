@@ -500,7 +500,7 @@ static uint32_t _get_job_cpus(job_record_t *job_ptr, int node_inx)
 }
 
 /* Some node is failing, but we lack a specific job ID, so see what jobs
- * have registered and have this node in their job allocaiton */
+ * have registered and have this node in their job allocation */
 static void _failing_node(node_record_t *node_ptr)
 {
 	job_failures_t *job_fail_ptr;

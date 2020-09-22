@@ -2205,7 +2205,7 @@ static void _set_def_cpu_bind(job_record_t *job_ptr)
 }
 
 /*
- * A step may explicity set a TRES count to zero in order to avoid making use
+ * A step may explicitly set a TRES count to zero in order to avoid making use
  * of the job's TRES specifications. At this point, clear the records with
  * zero counts.
  */

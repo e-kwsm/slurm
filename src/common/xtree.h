@@ -248,7 +248,7 @@ typedef uint8_t (*xtree_find_compare_t)(const void* node_data,
  *
  * @param tree is the tree to search through.
  * @param compare is a function returning 0 when the element correspond to
- *                search criterias, this function takes node_data for each
+ *                search criteria, this function takes node_data for each
  *                node as first argument and arg as its second argument.
  * @param arg is a function argument which can be the key or whatever data
  *            the user function needs to find the searched element.
@@ -311,7 +311,7 @@ xtree_node_t* xtree_common(xtree_t* tree,
  * @param tree the managed tree.
  * @param node the node to start from.
  * @param size will be modified according to the number of leaves in the
- *             retured list if the return value is not null.
+ *             returned list if the return value is not null.
  * @returns the `xmalloc`ed leaves array starting from node or NULL if bogus
  *          tree or bad parameters. Although size contains the
  *          array number of elements, the array is null terminated.

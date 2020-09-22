@@ -501,7 +501,7 @@ extern int node_config_load(List gres_conf_list, node_config_load_t *config)
 	else
 		log_lvl = LOG_LEVEL_DEBUG;
 
-	log_var(log_lvl, "%s: Initalized gres.conf list:", plugin_name);
+	log_var(log_lvl, "%s: Initialized gres.conf list:", plugin_name);
 	print_gres_list(gres_conf_list, log_lvl);
 
 	/*

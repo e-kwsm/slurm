@@ -2559,7 +2559,7 @@ extern int assoc_mgr_fill_in_assoc(void *db_conn,
 	assoc->uid              = ret_assoc->uid;
 
 	/* Don't send any usage info since we don't know if the usage
-	   is really in existance here, if they really want it they can
+	   is really in existence here, if they really want it they can
 	   use the pointer that is returned. */
 
 	/* if (!assoc->usage->children_list) */
@@ -2788,7 +2788,7 @@ extern int assoc_mgr_fill_in_qos(void *db_conn, slurmdb_qos_rec_t *qos,
 	qos->priority = found_qos->priority;
 
 	/* Don't send any usage info since we don't know if the usage
-	   is really in existance here, if they really want it they can
+	   is really in existence here, if they really want it they can
 	   use the pointer that is returned. */
 
 	/* if (!qos->usage->acct_limit_list) */
@@ -3664,7 +3664,7 @@ extern int assoc_mgr_update_assocs(slurmdb_update_object_t *update, bool locked)
 		} else if (!object->cluster) {
 			/* This clause is only here for testing
 			   purposes, it shouldn't really happen in
-			   real senarios.
+			   real scenarios.
 			*/
 			debug("THIS SHOULD ONLY HAPPEN IN A TEST ENVIRONMENT");
 			object->cluster = xstrdup("test");
@@ -5650,7 +5650,7 @@ extern int load_assoc_usage(void)
 
 		/* We want to do this all the way up to and including
 		   root.  This way we can keep track of how much usage
-		   has occured on the entire system and use that to
+		   has occurred on the entire system and use that to
 		   normalize against.
 		*/
 		if (assoc) {

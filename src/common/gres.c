@@ -6959,7 +6959,7 @@ static uint32_t _job_test(void *job_gres_data, void *node_gres_data,
  * IN node_gres_list  - node's gres_list built by
  *                      gres_plugin_node_config_validate()
  * IN use_total_gres  - if set then consider all GRES resources as available,
- *		        and none are commited to running jobs
+ *		        and none are committed to running jobs
  * IN/OUT core_bitmap - Identification of available cores (NULL if no restriction)
  * IN core_start_bit  - index into core_bitmap for this node's first cores
  * IN core_end_bit    - index into core_bitmap for this node's last cores
@@ -7018,7 +7018,7 @@ extern void gres_plugin_job_core_filter(List job_gres_list, List node_gres_list,
  * IN job_gres_list  - job's gres_list built by gres_plugin_job_state_validate()
  * IN node_gres_list - node's gres_list built by gres_plugin_node_config_validate()
  * IN use_total_gres - if set then consider all gres resources as available,
- *		       and none are commited to running jobs
+ *		       and none are committed to running jobs
  * IN core_bitmap    - Identification of available cores (NULL if no restriction)
  * IN core_start_bit - index into core_bitmap for this node's first core
  * IN core_end_bit   - index into core_bitmap for this node's last core
@@ -7627,7 +7627,7 @@ static void _sock_gres_log(List sock_gres_list, char *node_name)
  * IN job_gres_list   - job's gres_list built by gres_plugin_job_state_validate()
  * IN node_gres_list  - node's gres_list built by gres_plugin_node_config_validate()
  * IN use_total_gres  - if set then consider all gres resources as available,
- *		        and none are commited to running jobs
+ *		        and none are committed to running jobs
  * IN/OUT core_bitmap - Identification of available cores on this node
  * IN sockets         - Count of sockets on the node
  * IN cores_per_sock  - Count of cores per socket on this node

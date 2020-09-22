@@ -1078,7 +1078,7 @@ static size_t _direct_hdr_pack_samearch(pmixp_base_hdr_t *hdr, void *net)
 	return _base_hdr_pack_full_samearch(hdr, net);
 }
 
-/* Get te pointer to the message bufer */
+/* Get te pointer to the message buffer */
 static void *_direct_msg_ptr(void *msg)
 {
 	_direct_proto_message_t *_msg = (_direct_proto_message_t*)msg;
@@ -1196,7 +1196,7 @@ _direct_conn_establish(pmixp_conn_t *conn, void *_hdr, void *msg)
 	if (!dconn) {
 		/* connection was refused because we already
 		 * have established connection
-		 * It seems that some sort of race condition occured
+		 * It seems that some sort of race condition occurred
 		 */
 		close(fd);
 		nodename = pmixp_info_job_host(hdr->nodeid);
@@ -1291,7 +1291,7 @@ int pmixp_server_direct_conn_early(void)
 		}
 		coll[count++] = pmixp_state_coll_get(types[i], &proc, 1);
 	}
-	/* use Tree algo by defaut */
+	/* use Tree algo by default */
 	if (!count) {
 		coll[count++] = pmixp_state_coll_get(PMIXP_COLL_TYPE_FENCE_TREE, &proc, 1);
 	}

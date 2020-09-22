@@ -2183,7 +2183,7 @@ Usage: squeue [OPTIONS]\n\
                                   of one\n\
   -h, --noheader                  no headers on output\n\
       --hide                      do not display jobs in hidden partitions\n\
-  -i, --iterate=seconds           specify an interation period\n\
+  -i, --iterate=seconds           specify an interaction period\n\
   -j, --job=job(s)                comma separated list of jobs IDs\n\
                                   to view, default is all\n\
       --local                     Report information only about jobs on the\n\

@@ -398,7 +398,7 @@ int proctrack_p_get_pids(uint64_t cont_id, pid_t **pids, int *npids)
 		if (pidcnt == -1) {
 			int rc = SLURM_SUCCESS;
 			/*
-			 * There is a possiblity for a race condition
+			 * There is a possibility for a race condition
 			 * where if the last task in the job exits
 			 * between job_getpidcnt and job_getpidlist.
 			 * That is ok, so just return SUCCESS;

@@ -145,7 +145,7 @@ struct node_record {
 					 * plugins */
 	uint64_t sched_weight;		/* Node's weight for scheduling
 					 * purposes. For cons_tres use */
-	uint32_t weight;		/* orignal weight, used only for state
+	uint32_t weight;		/* original weight, used only for state
 					 * save/restore, DO NOT use for
 					 * scheduling purposes. */
 	char *arch;			/* computer architecture */

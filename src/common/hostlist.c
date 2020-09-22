@@ -1426,7 +1426,7 @@ hostlist_t _hostlist_create(const char *hostlist, char *sep, char *r_op,
 		high = low = 0;
 
 		/* find end of alpha part
-		 *   do this by finding last occurence of range_op in str */
+		 *   do this by finding last occurrence of range_op in str */
 		pos = strlen(tok) - 1;
 		if (strstr(tok, r_op) != '\0') {
 			while (pos >= 0 && (char) tok[pos] != range_op)
@@ -1452,7 +1452,7 @@ hostlist_t _hostlist_create(const char *hostlist, char *sep, char *r_op,
 			/* push pointer past prefix */
 			tok += pos;
 
-			/* count number of digits for ouput fmt */
+			/* count number of digits for output fmt */
 			for (fmt = 0; isdigit(tok[fmt]); ++fmt) {;}
 
 			if (fmt == 0)
@@ -2494,7 +2494,7 @@ static void hostlist_coalesce(hostlist_t hl)
 /* attempt to join ranges at loc and loc-1 in a hostlist  */
 /* delete duplicates, return the number of hosts deleted  */
 /* assumes that the hostlist hl has been locked by caller */
-/* returns -1 if no range join occured */
+/* returns -1 if no range join occurred */
 static int _attempt_range_join(hostlist_t hl, int loc)
 {
 	int ndup;

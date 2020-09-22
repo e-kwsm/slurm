@@ -759,7 +759,7 @@ extern void init_srun(int argc, char **argv,
 }
 
 /*
- * Modify options for a job step (after job allocaiton is complete
+ * Modify options for a job step (after job allocation is complete
  */
 static void _set_step_opts(slurm_opt_t *opt_local)
 {

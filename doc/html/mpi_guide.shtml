@@ -85,7 +85,7 @@ Note also that Intel MPI doesn't officially support PMIx, so thought it can
 run there is not any guarantee.
 </p>
 
-<p>Altough it is recommended to build PMIx from the
+<p>Although it is recommended to build PMIx from the
 <a href="https://github.com/openpmix/openpmix/releases">packaged releases</a>,
 here is an example on how to build PMIx v2.1 by cloning the git repository:
 </p>
@@ -482,7 +482,7 @@ which provides the server side functionality but the client side must implement 
 and the other interface calls.<br>
 
 <p>
-This does require that the MPICH intallation have been installed with the <i>--with-pmi=pmi2</i> configure option.<br>
+This does require that the MPICH installation have been installed with the <i>--with-pmi=pmi2</i> configure option.<br>
 
 <p>
 To check if the MPI version you are using supports PMI2 check for PMI2_* symbols in the MPI library.

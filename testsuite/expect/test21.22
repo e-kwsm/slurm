@@ -607,7 +607,7 @@ expect {
 }
 
 if {$matches != 2} {
-	log_error "Adminstrator and coordinator 2 incorrect with only $matches"
+	log_error "Administrator and coordinator 2 incorrect with only $matches"
 	incr exit_code 1
 }
 
@@ -758,7 +758,7 @@ expect {
 }
 
 if {$matches != 3} {
-	log_error "Adminstrator and coordinator 3 incorrect with only $matches"
+	log_error "Administrator and coordinator 3 incorrect with only $matches"
 	incr exit_code 1
 }
 
@@ -899,7 +899,7 @@ expect {
 }
 
 if {$matches != 3} {
-	log_error "Adminstrator and coordinator 3 incorrect with only $matches"
+	log_error "Administrator and coordinator 3 incorrect with only $matches"
 	incr exit_code 1
 }
 

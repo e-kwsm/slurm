@@ -1630,7 +1630,7 @@ extern int job_complete(uint32_t job_id, uid_t uid, bool requeue,
  * job_independent - determine if this job has a dependent job pending
  *	or if the job's scheduled begin time is in the future
  * IN job_ptr - pointer to job being tested
- * RET - true if job no longer must be defered for another job
+ * RET - true if job no longer must be deferred for another job
  */
 extern bool job_independent(job_record_t *job_ptr);
 
@@ -2344,7 +2344,7 @@ extern int step_create(job_step_create_request_msg_t *step_specs,
 
 /*
  * step_layout_create - creates a step_layout according to the inputs.
- * IN step_ptr - step having tasks layed out
+ * IN step_ptr - step having tasks laid out
  * IN step_node_list - node list of hosts in step
  * IN node_count - count of nodes in step allocation
  * IN num_tasks - number of tasks in step

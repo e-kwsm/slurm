@@ -153,7 +153,7 @@ if {$exit_code != 0} {
 
 ######MAIN######
 #####################################
-# TEST: add federation with non-existant cluster(s)
+# TEST: add federation with non-existent cluster(s)
 #####################################
 set matches 0
 set my_pid [spawn $sacctmgr -i add federation $fed1 cluster=$tc1]
@@ -202,7 +202,7 @@ if {$exit_code || $matches != 2} {
 }
 
 #####################################
-# TEST: add cluster to non-existant federation
+# TEST: add cluster to non-existent federation
 #####################################
 set matches 0
 set my_pid [spawn $sacctmgr -i add cluster $tc1 federation=$fed1]

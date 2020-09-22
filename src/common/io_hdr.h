@@ -41,7 +41,7 @@
 
 #include <inttypes.h>
 
-#include "src/common/macros.h"   /* Containes SLURM_CRED_SIGLEN */
+#include "src/common/macros.h"   /* Contains SLURM_CRED_SIGLEN */
 #include "src/common/pack.h"
 #include "src/common/cbuf.h"
 #include "src/common/xmalloc.h"

@@ -748,7 +748,7 @@ _cpu_freq_get_scaling_freq(int cpuidx, char* option)
 }
 
 /*
- * test for existance of cpufreq file
+ * test for existence of cpufreq file
  *
  * Return: true if file found
  */
@@ -1486,7 +1486,7 @@ cpu_freq_govlist_to_string(char* buf, uint16_t bufsz, uint32_t govs)
  * Input:  - arg  - frequency value to check
  * 		    valid governor, low, medium, highm1, high,
  * 		    or numeric frequency
- *	   - freq - pointer to corresponging enum or numberic value
+ *	   - freq - pointer to corresponging enum or numeric value
  * Returns - -1 on error, else 0
  */
 extern int
@@ -1684,7 +1684,7 @@ clean:
  * freq_str is a buffer to hold the composite string for all input values.
  * freq_len is length of freq_str
  * gov is a governor value
- * min is a minumum value
+ * min is a minimum value
  * max is a maximum value
  * freq is a (current) frequency value.
  *

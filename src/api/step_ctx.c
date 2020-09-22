@@ -179,7 +179,7 @@ slurm_step_ctx_create (const slurm_step_ctx_params_t *step_params)
 	step_req = _create_step_request(step_params);
 
 	/*
-	 * We will handle the messages in the step_launch.c mesage handler,
+	 * We will handle the messages in the step_launch.c message handler,
 	 * but we need to open the socket right now so we can tell the
 	 * controller which port to use.
 	 */
@@ -265,7 +265,7 @@ slurm_step_ctx_create_timeout (const slurm_step_ctx_params_t *step_params,
 	DEF_TIMERS;
 
 	/*
-	 * We will handle the messages in the step_launch.c mesage handler,
+	 * We will handle the messages in the step_launch.c message handler,
 	 * but we need to open the socket right now so we can tell the
 	 * controller which port to use.
 	 */
@@ -361,7 +361,7 @@ slurm_step_ctx_create_no_alloc (const slurm_step_ctx_params_t *step_params,
 	/* First copy the user's step_params into a step request struct */
 	step_req = _create_step_request(step_params);
 
-	/* We will handle the messages in the step_launch.c mesage handler,
+	/* We will handle the messages in the step_launch.c message handler,
 	 * but we need to open the socket right now so we can tell the
 	 * controller which port to use.
 	 */
@@ -374,7 +374,7 @@ slurm_step_ctx_create_no_alloc (const slurm_step_ctx_params_t *step_params,
 	step_req->port = port;
 	step_req->host = xshort_hostname();
 
-	/* Then make up a reponse with only certain things filled in */
+	/* Then make up a response with only certain things filled in */
 	step_resp = (job_step_create_response_msg_t *)
 		xmalloc(sizeof(job_step_create_response_msg_t));
 

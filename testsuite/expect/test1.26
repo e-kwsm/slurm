@@ -49,7 +49,7 @@ if {[string compare $switch "none"]} {
 #
 # Submit a 1 node job and record the node name
 #
-# NOTE: Check explicity for "^0:" or "\n0:. Otherwise in srun verbose mode we
+# NOTE: Check explicitly for "^0:" or "\n0:. Otherwise in srun verbose mode we
 # can get a hostname ending with 0 in the messages that gets used to generate
 # a bad value for host_0 below.
 #

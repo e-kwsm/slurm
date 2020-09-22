@@ -311,7 +311,7 @@ static int _isdefault(int cond_set, List acct_list, List assoc_list)
 		while ((assoc = list_next(itr2))) {
 			char tmp[1000];
 			/* The pgsql plugin doesn't have the idea of
-			   only_defs, so thre query could return all
+			   only_defs, so the query could return all
 			   the associations, even without defaults. */
 			if (cond_set == SA_SET_USER) {
 				if (xstrcasecmp(acct, assoc->acct))

@@ -4754,7 +4754,7 @@ extern job_record_t *job_array_split(job_record_t *job_ptr)
 	return job_ptr_pend;
 }
 
-/* Add job array data stucture to the job record */
+/* Add job array data structure to the job record */
 static void _create_job_array(job_record_t *job_ptr, job_desc_msg_t *job_specs)
 {
 	struct job_details *details;
@@ -5159,7 +5159,7 @@ extern int job_allocate(job_desc_msg_t * job_specs, int immediate,
 		top_prio = _top_priority(job_ptr, job_specs->het_job_offset);
 	else
 		top_prio = true;	/* don't bother testing,
-					 * it is not runable anyway */
+					 * it is not runnable anyway */
 
 	if (immediate &&
 	    (too_fragmented || (!top_prio) || (!independent) || defer_sched)) {
@@ -5922,7 +5922,7 @@ extern int job_str_signal(char *job_id_str, uint16_t signal, uint16_t flags,
 				srun_allocate_abort(job_ptr);
 				job_completion_logger(job_ptr, false);
 				/*
-				 * Master job record, even wihtout tasks,
+				 * Master job record, even without tasks,
 				 * counts as one job record
 				 */
 				job_count -= (orig_task_cnt - 1);
@@ -9331,7 +9331,7 @@ static int _validate_job_desc(job_desc_msg_t *job_desc_msg, int allocate,
 						part_list)) {
 		return ESLURM_INVALID_TASK_MEMORY;
 	} else {
-		/* Memory limit explicity set by user */
+		/* Memory limit explicitly set by user */
 		job_desc_msg->bitflags |= JOB_MEM_SET;
 	}
 
@@ -17662,7 +17662,7 @@ extern bool job_hold_requeue(job_record_t *job_ptr)
 	/*
 	 * A job may be canceled during its epilog in which case we need to
 	 * check that the job (or base job in the case of an array) was not
-	 * canceled before attemping to requeue.
+	 * canceled before attempting to requeue.
 	 */
 	if (IS_JOB_CANCELLED(job_ptr) ||
 	    (((job_ptr->array_task_id != NO_VAL) || job_ptr->array_recs) &&

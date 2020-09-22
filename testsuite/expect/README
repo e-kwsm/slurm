@@ -44,7 +44,7 @@ Files created within this directory on one node in the cluster should be
 visible to all other nodes in the cluster.
 
 For the valid fields usable with testsuite_log_format, see the header
-comments for the _log_format procedure. See also the default defintion of
+comments for the _log_format procedure. See also the default definition of
 testsuite_log_format in globals for an example of syntax.
 
 The "globals.local" file can be in the directory containing this README, or
@@ -541,7 +541,7 @@ test17.35  Test performance/timing of job submissions.
 test17.36  Test that the OverSubscribe option in partitions is enforced.
 test17.37  Validate that afternotok dependency is enforced.
 test17.38  Test for sbatch --signal.
-test17.39  Validate dependecy OR option.
+test17.39  Validate dependency OR option.
 test17.40  Test of --thread-spec option.
 test17.41  Validate that sbatch, srun, salloc return partition error message.
 test17.42  Test of sbatch --wait option.

@@ -500,7 +500,7 @@ int hostset_intersects(hostset_t set, const char *hosts);
 
 /* hostset_within():
  * Return 1 if all hosts specified by "hosts" are within the hostset "set"
- * Retrun 0 if every host in "hosts" is not in the hostset "set"
+ * Return 0 if every host in "hosts" is not in the hostset "set"
  */
 int hostset_within(hostset_t set, const char *hosts);
 
@@ -515,7 +515,7 @@ char * hostset_shift(hostset_t set);
 char *hostset_pop(hostset_t set);
 
 /* hostset_shift_range():
- * hostset eqivalent to hostlist_shift_range()
+ * hostset equivalent to hostlist_shift_range()
  */
 char * hostset_shift_range(hostset_t set);
 

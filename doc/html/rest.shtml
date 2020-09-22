@@ -149,7 +149,7 @@ already supported by <a href="https://www.nginx.com/">NGiNX</a>.
 <p>An example is provided of how to potentially setup a <b>very</b> simple
 authenticating proxy. This example provides a single test user that is harded
 coded to the Unix ID 1000. This example is provided to show the general setup of
-getting NGINX as an authenticating proxy but not to implment site specific
+getting NGINX as an authenticating proxy but not to implement site specific
 authentication. The example uses PHP sessions to created a trusted cookie on the
 client connection but does not expose the API key or user id to the user or allow
 them to directly modify it. NGINX enforces the requirement that the client be

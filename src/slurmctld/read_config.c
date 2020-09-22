@@ -1363,7 +1363,7 @@ int read_slurm_conf(int recover, bool reconfig)
 
 	/*
 	 * _build_bitmaps() must follow node_features_g_get_node() and
-	 * preceed build_features_list_*()
+	 * precede build_features_list_*()
 	 */
 	_build_bitmaps();
 

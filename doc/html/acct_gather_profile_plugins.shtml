@@ -13,7 +13,7 @@ their own Slurm profile accounting plugins.
 than can reasonably be kept in the accounting database. (All jobs may also not
 be profiled.)
 
-A seperate
+A separate
 <a href="hdf5_profile_user_guide.html">User Guide</a> documents how to use
 the hdf5 version of the plugin. An influxdb plugin is also available since
 Slurm 17.11.

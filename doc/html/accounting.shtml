@@ -281,7 +281,7 @@ $cat my.cnf
 <i>COMPACT</i> which could cause some issues during an upgrade when creating
 tables. In more recent versions it was changed to <i>DYNAMIC</i>. The row
 format of a table determines how its rows are physically stored in pages and
-directly affects the performane of queries and DML operations. In very specific
+directly affects the performance of queries and DML operations. In very specific
 situations using a format other than DYNAMIC can lead to rows not fitting into
 pages and MySQL can throw an error during the creation of the table because of
 that. Therefore it is recommended to read carefully about the row format before

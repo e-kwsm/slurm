@@ -2710,7 +2710,7 @@ static void _rpc_reconfig_with_config(slurm_msg_t *msg)
 				(config_response_msg_t *) msg->data;
 			/*
 			 * Running in "configless" mode as indicated by the
-			 * cache directory's existance. Update those so
+			 * cache directory's existence. Update those so
 			 * our reconfigure picks up the changes, and so
 			 * client commands see the changes as well.
 			 */
@@ -4466,7 +4466,7 @@ _kill_all_active_steps(uint32_t jobid, int sig, int flags, bool batch,
 
 /*
  * ume_notify - Notify all jobs and steps on this node that a Uncorrectable
- *	Memory Error (UME) has occured by sending SIG_UME (to log event in
+ *	Memory Error (UME) has occurred by sending SIG_UME (to log event in
  *	stderr)
  * RET count of signaled job steps
  */
