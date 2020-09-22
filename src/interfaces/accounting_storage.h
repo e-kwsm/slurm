@@ -64,7 +64,7 @@ extern int acct_storage_g_fini(void); /* unload the plugin */
  * get a new connection to the storage unit
  * IN: conn_num - If running more than one connection to the database
  *     this can be used to tell which connection is doing what
- * OUT: persist_conn_flags - If using a persistant connection to talk to the
+ * OUT: persist_conn_flags - If using a persistent connection to talk to the
  *      slurmdbd get back the flags from the server.
  * IN: rollback - maintain journal of changes to permit rollback
  * RET: pointer used to access db

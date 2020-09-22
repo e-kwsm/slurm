@@ -165,7 +165,7 @@ extern int job_test_lic_resv(job_record_t *job_ptr, char *lic_name,
  *		      overlap with an advanced reservation, indicates that
  *		      resources were removed from availability to the job
  * IN reboot    - true if node reboot required to start job
- * RET	SLURM_SUCCESS if runable now
+ * RET	SLURM_SUCCESS if runnable now
  *	ESLURM_RESERVATION_ACCESS access to reservation denied
  *	ESLURM_RESERVATION_INVALID reservation invalid
  *	ESLURM_INVALID_TIME_VALUE reservation invalid at time "when"
@@ -201,7 +201,7 @@ extern time_t find_resv_end(time_t start_time, int resolution);
  *	specification, if any
  *
  * IN job_ptr      - job to test
- * RET	SLURM_SUCCESS if runable now, otherwise an error code
+ * RET	SLURM_SUCCESS if runnable now, otherwise an error code
  */
 extern int job_test_resv_now(job_record_t *job_ptr);
 

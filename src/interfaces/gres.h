@@ -701,7 +701,7 @@ extern void *gres_job_state_dup(gres_job_state_t *gres_js);
 
 /*
  * Deallocate all resources on this node previous allocated to any jobs.
- *	This function isused to synchronize state after slurmctld restarts or
+ *	This function issued to synchronize state after slurmctld restarts or
  *	is reconfigured.
  * IN gres_list - node gres state information
  */

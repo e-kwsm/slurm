@@ -3513,7 +3513,7 @@ static void *_assoc_cache_mgr(void *no_data)
 	}
 
 	if (!job_list) {
-		/* This could happen in rare occations, it doesn't
+		/* This could happen in rare occasions, it doesn't
 		 * matter since when the job_list is populated things
 		 * will be in sync.
 		 */
@@ -3627,7 +3627,7 @@ use_qos_id: ; /* must be a blank ; for older compilers (el7) */
 
 handle_parts:
 	if (!part_list) {
-		/* This could happen in rare occations, it doesn't
+		/* This could happen in rare occasions, it doesn't
 		 * matter since when the job_list is populated things
 		 * will be in sync.
 		 */

@@ -115,7 +115,7 @@ extern int slurm_open_stream(slurm_addr_t *slurm_address, bool retry);
 
 /* slurm_get_stream_addr
  * esentially a encapsilated get_sockname
- * IN open_fd 		- file descriptor to retreive slurm_addr_t for
+ * IN open_fd 		- file descriptor to retrieve slurm_addr_t for
  * OUT address		- address that open_fd to bound to
  */
 extern int slurm_get_stream_addr(int open_fd, slurm_addr_t *address);
