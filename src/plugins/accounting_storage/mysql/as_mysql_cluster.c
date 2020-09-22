@@ -430,7 +430,7 @@ extern int as_mysql_add_clusters(mysql_conn_t *mysql_conn, uint32_t uid,
 			object->root_assoc = NULL;
 		}
 
-		/* Build up extra with cluster specfic values for txn table */
+		/* Build up extra with cluster specific values for txn table */
 		xstrfmtcat(extra, ", federation='%s', fed_id=%d, fed_state=%u, "
 				  "features='%s'",
 			   (object->fed.name) ? object->fed.name : "",

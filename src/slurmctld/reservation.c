@@ -6287,7 +6287,7 @@ end_it:
  * Determine if a job can start now based only upon reservations
  *
  * IN job_ptr      - job to test
- * RET	SLURM_SUCCESS if runable now, otherwise an error code
+ * RET	SLURM_SUCCESS if runnable now, otherwise an error code
  */
 extern int job_test_resv_now(job_record_t *job_ptr)
 {

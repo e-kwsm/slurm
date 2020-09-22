@@ -146,7 +146,7 @@ extern void net_set_keep_alive(int sock)
  * back in 9.0.
  *
  * Removing this call might decrease the robustness of communications,
- * but will probably have no noticable effect.
+ * but will probably have no noticeable effect.
  */
 #if !defined (__APPLE__) && (! defined(__FreeBSD__) || (__FreeBSD_version > 900000))
 	if (slurm_conf.keepalive_interval != NO_VAL) {

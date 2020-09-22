@@ -855,7 +855,7 @@ static char *_uint16_array_to_str(int array_len, const uint16_t *array)
 {
 	int i;
 	int previous = 0;
-	char *sep = ",";  /* seperator */
+	char *sep = ",";  /* separator */
 	char *str = xstrdup("");
 
 	if (array == NULL)

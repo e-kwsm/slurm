@@ -1612,7 +1612,7 @@ static int _pick_best_nodes(struct node_set *node_set_ptr, int node_set_size,
 	 * CR_*_MEMORY and the request is for
 	 * nodes of different memory sizes we need to reset the
 	 * pn_min_memory as select_g_job_test can
-	 * alter that making it so the order of contraints
+	 * alter that making it so the order of constraints
 	 * matter since the first pass through this will set the
 	 * pn_min_memory based on that first constraint and if
 	 * it isn't smaller than all the other requests they

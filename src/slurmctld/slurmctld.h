@@ -1141,7 +1141,7 @@ extern int job_complete(uint32_t job_id, uid_t uid, bool requeue,
  * job_independent - determine if this job has a dependent job pending
  *	or if the job's scheduled begin time is in the future
  * IN job_ptr - pointer to job being tested
- * RET - true if job no longer must be defered for another job
+ * RET - true if job no longer must be deferred for another job
  */
 extern bool job_independent(job_record_t *job_ptr);
 
