@@ -4255,7 +4255,7 @@ static void _het_job_start_set(job_record_t *job_ptr, time_t latest_start,
 
 /*
  * Return TRUE if we have expected start times for all components of a hetjob
- * and all components are valid and runable.
+ * and all components are valid and runnable.
  *
  * NOTE: This should never happen, but we will also start the job if all of the
  * other components are already running,

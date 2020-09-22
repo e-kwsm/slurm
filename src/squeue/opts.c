@@ -1511,6 +1511,113 @@ static void _help_format2(bool step_flag)
 		_print_step_fmt_fields2();
 	else
 		_print_job_fmt_fields2();
+||||||| parent of 3329f59044a9 (Fix typo)
+	printf("\
+Usage: squeue [OPTIONS]\n\
+  -A, --account=account(s)        comma separated list of accounts\n\
+				  to view, default is all accounts\n\
+  -a, --all                       display jobs in hidden partitions\n\
+      --array-unique              display one unique pending job array\n\
+                                  element per line\n\
+      --federation                Report federated information if a member\n\
+                                  of one\n\
+  -h, --noheader                  no headers on output\n\
+      --hide                      do not display jobs in hidden partitions\n\
+  -i, --iterate=seconds           specify an interation period\n\
+  -j, --job=job(s)                comma separated list of jobs IDs\n\
+                                  to view, default is all\n\
+      --json[=data_parser]        Produce JSON output\n\
+      --local                     Report information only about jobs on the\n\
+                                  local cluster. Overrides --federation.\n\
+  -l, --long                      long report\n\
+  -L, --licenses=(license names)  comma separated list of license names to view\n\
+  -M, --clusters=cluster_name     cluster to issue commands to.  Default is\n\
+                                  current cluster.  cluster with no name will\n\
+                                  reset to default. Implies --local.\n\
+  -n, --name=job_name(s)          comma separated list of job names to view\n\
+      --noconvert                 don't convert units from their original type\n\
+                                  (e.g. 2048M won't be converted to 2G).\n\
+  -o, --format=format             format specification\n\
+  -O, --Format=format             format specification\n\
+  -p, --partition=partition(s)    comma separated list of partitions\n\
+				  to view, default is all partitions\n\
+  -q, --qos=qos(s)                comma separated list of qos's\n\
+				  to view, default is all qos's\n\
+  -R, --reservation=name          reservation to view, default is all\n\
+  -r, --array                     display one job array element per line\n\
+      --sibling                   Report information about all sibling jobs\n\
+                                  on a federated cluster. Implies --federation.\n\
+  -s, --step=step(s)              comma separated list of job steps\n\
+				  to view, default is all\n\
+  -S, --sort=fields               comma separated list of fields to sort on\n\
+      --start                     print expected start times of pending jobs\n\
+  -t, --states=states             comma separated list of states to view,\n\
+				  default is pending and running,\n\
+				  '--states=all' reports all states\n\
+  -u, --user=user_name(s)         comma separated list of users to view\n\
+      --name=job_name(s)          comma separated list of job names to view\n\
+  -v, --verbose                   verbosity level\n\
+  -V, --version                   output version information and exit\n\
+  -w, --nodelist=hostlist         list of nodes to view, default is \n\
+				  all nodes\n\
+      --yaml[=data_parser]        Produce YAML output\n\
+\nHelp options:\n\
+  --help                          show this help message\n\
+  --usage                         display a brief summary of squeue options\n");
+=======
+	printf("\
+Usage: squeue [OPTIONS]\n\
+  -A, --account=account(s)        comma separated list of accounts\n\
+				  to view, default is all accounts\n\
+  -a, --all                       display jobs in hidden partitions\n\
+      --array-unique              display one unique pending job array\n\
+                                  element per line\n\
+      --federation                Report federated information if a member\n\
+                                  of one\n\
+  -h, --noheader                  no headers on output\n\
+      --hide                      do not display jobs in hidden partitions\n\
+  -i, --iterate=seconds           specify an interaction period\n\
+  -j, --job=job(s)                comma separated list of jobs IDs\n\
+                                  to view, default is all\n\
+      --json[=data_parser]        Produce JSON output\n\
+      --local                     Report information only about jobs on the\n\
+                                  local cluster. Overrides --federation.\n\
+  -l, --long                      long report\n\
+  -L, --licenses=(license names)  comma separated list of license names to view\n\
+  -M, --clusters=cluster_name     cluster to issue commands to.  Default is\n\
+                                  current cluster.  cluster with no name will\n\
+                                  reset to default. Implies --local.\n\
+  -n, --name=job_name(s)          comma separated list of job names to view\n\
+      --noconvert                 don't convert units from their original type\n\
+                                  (e.g. 2048M won't be converted to 2G).\n\
+  -o, --format=format             format specification\n\
+  -O, --Format=format             format specification\n\
+  -p, --partition=partition(s)    comma separated list of partitions\n\
+				  to view, default is all partitions\n\
+  -q, --qos=qos(s)                comma separated list of qos's\n\
+				  to view, default is all qos's\n\
+  -R, --reservation=name          reservation to view, default is all\n\
+  -r, --array                     display one job array element per line\n\
+      --sibling                   Report information about all sibling jobs\n\
+                                  on a federated cluster. Implies --federation.\n\
+  -s, --step=step(s)              comma separated list of job steps\n\
+				  to view, default is all\n\
+  -S, --sort=fields               comma separated list of fields to sort on\n\
+      --start                     print expected start times of pending jobs\n\
+  -t, --states=states             comma separated list of states to view,\n\
+				  default is pending and running,\n\
+				  '--states=all' reports all states\n\
+  -u, --user=user_name(s)         comma separated list of users to view\n\
+      --name=job_name(s)          comma separated list of job names to view\n\
+  -v, --verbose                   verbosity level\n\
+  -V, --version                   output version information and exit\n\
+  -w, --nodelist=hostlist         list of nodes to view, default is \n\
+				  all nodes\n\
+      --yaml[=data_parser]        Produce YAML output\n\
+\nHelp options:\n\
+  --help                          show this help message\n\
+  --usage                         display a brief summary of squeue options\n");
+>>>>>>> 3329f59044a9 (Fix typo)
 }
 
 /*

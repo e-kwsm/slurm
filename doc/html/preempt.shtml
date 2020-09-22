@@ -9,7 +9,7 @@ Job preemption is implemented as a variation of Slurm's
 <a href="gang_scheduling.html">Gang Scheduling</a> logic.
 When a job that can preempt others is allocated resources that are
 already allocated to one or more jobs that could be preempted by the first job,
-the preemptable job(s) are preempted.
+the preemptible job(s) are preempted.
 Based on the configuration the preempted job(s) can be cancelled, or can be
 requeued and started using other resources, or suspended and resumed once the
 preemptor job completes, or can even share resources with the preemptor using
@@ -92,7 +92,7 @@ parameters are not critical.
 <B>PreemptMode</B>: Mechanism used to preempt jobs or enable gang scheduling.
 When the <I>PreemptType</I> parameter is set to enable preemption, the
 <I>PreemptMode</I> in the main section of slurm.conf selects the default
-mechanism used to preempt the preemptable jobs for the cluster.
+mechanism used to preempt the preemptible jobs for the cluster.
 <BR>
 <I>PreemptMode</I> may be specified on a per partition basis to override this
 default value if <I>PreemptType=preempt/partition_prio</I>. Alternatively, it
@@ -285,7 +285,7 @@ job and rely upon the gang scheduling logic to perform job suspend and resume,
 as described below.
 </P>
 <P>
-The select plugin is passed an ordered list of preemptable jobs to consider for
+The select plugin is passed an ordered list of preemptible jobs to consider for
 each pending job which is a candidate to start.
 This list is sorted by either:
 </P>

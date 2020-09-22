@@ -145,7 +145,7 @@ static void _reset_coll_dfwd(pmixp_coll_t *coll)
 	coll->state.tree.dfwd_cb_wait = 0;
 	coll->state.tree.dfwd_status = PMIXP_COLL_TREE_SND_NONE;
 	coll->state.tree.contrib_prnt = false;
-	/* Save the toal service offset */
+	/* Save the total service offset */
 	coll->state.tree.dfwd_offset = get_buf_offset(
 		coll->state.tree.dfwd_buf);
 }

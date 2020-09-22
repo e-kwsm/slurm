@@ -203,7 +203,7 @@ unpack_process_mapping: The mapping string should start from %s", prefix);
 				task_map[taskid++] = node;
 				if (tasks != NULL) {
 					/*
-					 * Cont tasks on each node if was
+					 * Count tasks on each node if was
 					 * requested
 					 */
 					tasks[node]++;

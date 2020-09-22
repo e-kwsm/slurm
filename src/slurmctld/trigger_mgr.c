@@ -117,7 +117,7 @@ typedef struct trig_mgr_info {
 	char *   program;	/* program to execute */
 	uint8_t  state;		/* 0=pending, 1=pulled, 2=completed */
 
-	/* The orig_ fields are used to save  and clone the original values */
+	/* The orig_ fields are used to save and clone the original values */
 	bitstr_t *orig_bitmap;	/* bitmap of requested nodes (if applicable) */
 	char *   orig_res_id;	/* original node name or job_id (string) */
 	time_t   orig_time;	/* offset (pending) or time stamp (complete) */
