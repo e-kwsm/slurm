@@ -4097,7 +4097,7 @@ extern int job_allocate(job_desc_msg_t *job_desc, int immediate,
 		top_prio = _top_priority(job_ptr, job_desc->het_job_offset);
 	else
 		top_prio = true;	/* don't bother testing,
-					 * it is not runable anyway */
+					 * it is not runnable anyway */
 
 	if (immediate &&
 	    (too_fragmented || (!top_prio) || (!independent) || defer_this)) {
@@ -17755,7 +17755,7 @@ extern bool job_hold_requeue(job_record_t *job_ptr)
 	/*
 	 * A job may be canceled during its epilog in which case we need to
 	 * check that the job (or base job in the case of an array) was not
-	 * canceled before attemping to requeue.
+	 * canceled before attempting to requeue.
 	 */
 	if (IS_JOB_CANCELLED(job_ptr) ||
 	    (((job_ptr->array_task_id != NO_VAL) || job_ptr->array_recs) &&

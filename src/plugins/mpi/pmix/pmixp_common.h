@@ -164,7 +164,7 @@
 #define PMIXP_CPERF_LITER "SLURM_PMIX_COLL_PERF_ITER_LARGE"
 /* The bound after which message is considered large */
 #define PMIXP_CPERF_BOUND "SLURM_PMIX_COLL_PERF_LARGE_PWR2"
-/* The prefered fence type, values:[auto|tree|ring] */
+/* The preferred fence type, values:[auto|tree|ring] */
 #define PMIXP_COLL_FENCE "SLURM_PMIX_FENCE"
 #define SLURM_PMIXP_FENCE_BARRIER "SLURM_PMIX_FENCE_BARRIER"
 

@@ -78,7 +78,7 @@ extern char *select_plugin_id_to_string(int plugin_id);
 extern int select_string_to_plugin_id(const char *plugin);
 
 /*******************************************\
- * GLOBAL SELECT STATE MANAGEMENT FUNCIONS *
+ * GLOBAL SELECT STATE MANAGEMENT FUNCTIONS *
 \*******************************************/
 
 /*
@@ -118,7 +118,7 @@ extern int select_g_state_save(char *dir_name);
 extern int select_g_state_restore(char *dir_name);
 
 /*********************************\
- * STATE INITIALIZATION FUNCIONS *
+ * STATE INITIALIZATION FUNCTIONS *
 \*********************************/
 
 /*
@@ -139,7 +139,7 @@ extern int select_g_job_init(List job_list);
 extern int select_g_reconfigure(void);
 
 /**************************\
- * NODE SPECIFIC FUNCIONS *
+ * NODE SPECIFIC FUNCTIONS *
 \**************************/
 
 /*
@@ -198,7 +198,7 @@ extern int select_g_select_nodeinfo_get(dynamic_plugin_data_t *nodeinfo,
 					void *data);
 
 /******************************************************\
- * JOB SPECIFIC SELECT CREDENTIAL MANAGEMENT FUNCIONS *
+ * JOB SPECIFIC SELECT CREDENTIAL MANAGEMENT FUNCTIONS *
 \******************************************************/
 
 #define SELECT_MODE_BASE         0x00ff
@@ -386,7 +386,7 @@ extern int select_g_job_expand(job_record_t *from_job_ptr,
 extern int select_g_job_resized(job_record_t *job_ptr, node_record_t *node_ptr);
 
 /*******************************************************\
- * STEP SPECIFIC SELECT CREDENTIAL MANAGEMENT FUNCIONS *
+ * STEP SPECIFIC SELECT CREDENTIAL MANAGEMENT FUNCTIONS *
 \*******************************************************/
 
 /*

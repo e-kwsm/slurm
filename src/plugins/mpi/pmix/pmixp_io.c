@@ -507,7 +507,7 @@ static void _send_progress(pmixp_io_engine_t *eng)
 	}
 
 	while (_send_pending(eng)) {
-		/* try to send everything untill fd became blockable
+		/* try to send everything until fd became blockable
 		 * FIXME: maybe set some restriction on number of
 		 * messages sended at once
 		 */

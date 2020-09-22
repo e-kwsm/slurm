@@ -218,7 +218,7 @@
 extern __thread bool drop_priv;
 #endif
 
-/* These defines have to be here to avoid circular dependancy with
+/* These defines have to be here to avoid circular dependency with
  * switch.h
  */
 #ifndef __switch_jobinfo_t_defined

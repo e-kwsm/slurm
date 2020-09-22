@@ -170,7 +170,7 @@
  *      /!\ WARNING: do not specify the same struct as suboption or /!\
  *      /!\ an infinite loop will occur.                            /!\
  * * S_P_EXPLINE - This type is an extended version of the S_P_LINE type that
- *      add the capability to expand the hostlist formated elements when
+ *      add the capability to expand the hostlist formatted elements when
  *      possible in order to reduce the number of lines required to parse some
  *      complex configurations. The values associated to the key of the
  *      S_P_EXPLINE will then be automatically expanded in order to return one
@@ -347,7 +347,7 @@ int s_p_parse_line(s_p_hashtbl_t *hashtbl, const char *line, char **leftover);
  * s_p_hashtbl_merge
  *
  * Merge the contents of two s_p_hashtbl_t data structures. Anything in
- * from_hashtbl that does not also appear in to_hashtbl is transfered to it.
+ * from_hashtbl that does not also appear in to_hashtbl is transferred to it.
  * This is intended primary to support multiple lines of DEFAULT configuration
  * information and preserve the old default values while adding new defaults.
  *
@@ -380,7 +380,7 @@ int s_p_parse_line_complete(s_p_hashtbl_t *hashtbl,
  * function is meant to be used inside a custom handler of a (left most) key.
  *
  * This function can be used in a custom handler, but in general, use of
- * S_P_*LINE is prefered.
+ * S_P_*LINE is preferred.
  *
  * IN hashtbl - hash table template of a final line after expansion,
  *		types and custom handlers are used after line has been

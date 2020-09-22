@@ -57,7 +57,7 @@
 typedef struct slurm_switch_context slurm_switch_context_t;
 
 /*******************************************\
- * GLOBAL SWITCH STATE MANAGEMENT FUNCIONS *
+ * GLOBAL SWITCH STATE MANAGEMENT FUNCTIONS *
 \*******************************************/
 
 /* initialize the switch plugin */
@@ -88,7 +88,7 @@ extern int  switch_g_restore(char *dir_name, bool recover);
 extern int  switch_g_clear(void);
 
 /******************************************************\
- * JOB-SPECIFIC SWITCH CREDENTIAL MANAGEMENT FUNCIONS *
+ * JOB-SPECIFIC SWITCH CREDENTIAL MANAGEMENT FUNCTIONS *
 \******************************************************/
 
 /* allocate storage for a switch job credential

@@ -56,7 +56,7 @@ resource requirements are satisfied.</p>
 <p>If the job can not be started with currently available resources, the plugin
 will attempt to identify jobs which can be preempted in order to initiate the
 new job. A copy of the current system state will be created including details
-about all resources and active jobs. Preemptable jobs will then be removed
+about all resources and active jobs. Preemptible jobs will then be removed
 from this simulated system state until the new job can be initiated. When
 sufficient resources are available for the new job, the jobs actually needing
 to be preempted for its initiation will be preempted (this may be a subset of

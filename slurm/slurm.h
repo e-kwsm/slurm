@@ -3107,7 +3107,7 @@ typedef struct {
 	uint16_t slurmctld_syslog_debug; /* slurmctld output to
 					  * local logfile and syslog*/
 	uint16_t slurmctld_timeout;/* seconds that backup controller waits
-				    * on non-responding primarly controller */
+				    * on non-responding primary controller */
 	char *slurmctld_params;	/* SlurmctldParameters */
 	uint16_t slurmd_debug;	/* slurmd logging level */
 	char *slurmd_logfile;	/* where slurmd error log gets written */
@@ -3743,7 +3743,7 @@ typedef struct {
 #define KILL_JOBS_VERBOSE SLURM_BIT(11) /* Verbose response requested */
 #define KILL_CRON SLURM_BIT(12) /* Request killing cron jobs */
 
-/* Use top bit of uint16_t in conjuction with KILL_* flags to indicate signal
+/* Use top bit of uint16_t in conjunction with KILL_* flags to indicate signal
  * has been sent to job previously. Does not need to be passed to slurmd. */
 #define WARN_SENT        SLURM_BIT(15) /* warn already sent, clear this on
 					* requeue */

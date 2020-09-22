@@ -2667,7 +2667,7 @@ next_task:
 				goto TRY_LATER;
 			}
 			job_ptr->start_time = orig_start_time;
-			continue;	/* not runable in this partition */
+			continue;	/* not runnable in this partition */
 		}
 
 		if (start_res > job_ptr->start_time) {
@@ -3715,7 +3715,7 @@ static void _het_job_start_set(job_record_t *job_ptr, time_t latest_start,
 
 /*
  * Return TRUE if we have expected start times for all components of a hetjob
- * and all components are valid and runable.
+ * and all components are valid and runnable.
  *
  * NOTE: This should never happen, but we will also start the job if all of the
  * other components are already running,

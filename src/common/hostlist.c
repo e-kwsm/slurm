@@ -1354,7 +1354,7 @@ hostlist_t *_hostlist_create(const char *hostlist, char *sep, char *r_op,
 		high = low = 0;
 
 		/* find end of alpha part
-		 *   do this by finding last occurence of range_op in str */
+		 *   do this by finding last occurrence of range_op in str */
 		pos = strlen(tok) - 1;
 		if (strstr(tok, r_op) != '\0') {
 			while (pos >= 0 && (char) tok[pos] != range_op)
