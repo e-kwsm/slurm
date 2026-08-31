@@ -312,6 +312,14 @@ older SQL server versions. If you are using
 <b>AccountingStoreFlags=job_env,job_script</b>, this must be greater than
 <b>max_script_size</b>.
 </li>
+<li><b>innodb_snapshot_isolation</b>:
+Set this to OFF. MariaDB 10.6.18, 10.11.8, 11.0.6, 11.1.5, 11.2.4, and 11.4.2
+add this variable, and MariaDB 11.6.2 and later versions set it to ON by
+default. MySQL does not have this variable. If it is ON, a locking read or a
+write to a row fails with the ER_CHECKREAD error when a different transaction
+changes that row. MariaDB then rolls back the whole transaction. The slurmdbd
+cannot recover from this failure and stops.
+</li>
 </ul>
 
 <p>
@@ -334,6 +342,9 @@ $cat my.cnf
 <i>innodb_log_file_size=1024M</i>
 <i>innodb_lock_wait_timeout=900</i>
 <i>max_allowed_packet=16M</i>
+...
+[mariadbd]
+<i>innodb_snapshot_isolation=OFF</i>
 ...
 </pre>
 
@@ -681,7 +692,7 @@ work properly. After you grant permission to the user 'slurm' in mysql then
 you can start SlurmDBD and the other Slurm daemons. You start SlurmDBD by
 typing its pathname '/usr/sbin/slurmdbd' or '/etc/init.d/slurmdbd start'. You
 can verify that SlurmDBD is running by typing 'ps aux | grep
-slurmdbd'.
+slurmdbd'.</p>
 
 <p>If the SlurmDBD is not running you can
 use the -v option when you start SlurmDBD to get more detailed
@@ -861,7 +872,7 @@ is unique to other associations with the same Account and User.</p>
 </h2>
 
 <p>When either adding or modifying a cluster, these are the options
-available with sacctmgr:
+available with sacctmgr:</p>
 <ul>
 <li><b>Name=</b> Cluster name</li>
 
@@ -872,7 +883,7 @@ available with sacctmgr:
 </h2>
 
 <p>When either adding or modifying an account, the following sacctmgr
-options are available:
+options are available:</p>
 <ul>
 <li><b>Cluster=</b> Only add this account to these clusters.
 The account is added to all defined clusters by default.</li>
@@ -898,7 +909,7 @@ hierarchy</li>
 </h2>
 
 <p>When either adding or modifying a user, the following sacctmgr
-options are available:
+options are available:</p>
 
 <ul>
 <li><b>Account=</b> Account(s) to add user to</li>
@@ -920,6 +931,7 @@ account, etc), and add other operators
 operator in the database.  They can also alter anything on a served
 slurmctld as if they were the slurm user or root.</li>
 </ul>
+</li>
 
 <li><b>Cluster=</b> Only add to accounts on these clusters (default is all clusters)</li>
 
@@ -957,7 +969,7 @@ Limits</a> document.</p>
 
 <p>When modifying entities, you can specify many different options in
 SQL-like fashion, using key words like <i>where</i> and <i>set</i>.
-A typical execute line has the following form:
+A typical execute line has the following form:</p>
 <pre>
 sacctmgr modify &lt;entity&gt; set &lt;options&gt; where &lt;options&gt;
 </pre>
@@ -1016,7 +1028,7 @@ command line. A poll of data is also triggered at the start or the end of a
 step.
 </p>
 <p>Depending on the nature of the metric, the values will be recorded as
-standalone values or aggregated/calculated into a data structure.
+standalone values or aggregated/calculated into a data structure.</p>
 <p>
 For example, the <b>TresUsageInTot</b> field can be queried with
 <a href="sstat.html">sstat</a> during job runtime, and for every TRES, it

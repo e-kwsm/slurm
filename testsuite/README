@@ -70,7 +70,7 @@ test1.8    Confirm that basic srun stdin, stdout, and stderr options work
 	   (--input, --output, and --error option respectively).
 test1.9    Test of srun verbose mode (--verbose option).
 test1.12   Test srun --overlap
-test1.14   Test exclusive resource allocation for a step (--exclusive option).
+test1.14   Test exclusive GRES/GPU allocation for a job (--exclusive option).
 test1.17   Test of srun --open-mode (truncate or append) option.
 test1.18   Test of --licenses option
 test1.32   Test of srun signal forwarding
@@ -703,6 +703,7 @@ test_101_1   Test --help and --helpformat
 test_101_2   Test sacct SLUID support including resizes and OriginalSLUID
 test_101_3   Test sacct OverSubscribe and Exclusive reporting from slurmdbd
 test_101_4   Test basic sacct --json
+test_101_5   Test sacct Restarts and Start are per-run after a requeue
 
 test_102_#   Testing of sacctmgr options.
 =========================================
@@ -883,6 +884,8 @@ test_116_57  Test srun in het job nested in non-het job
 test_116_58  Test srun --async --kill-on-bad-exit kills remaining tasks
 test_116_59  Test the --runtime job submission option and its runtime plugins
 test_116_60  Test the srun/salloc/sbatch --runtime=list option
+test_116_61  Verify a pending synchronous step is assigned a real step ID at submission
+test_116_62  Verify a synchronous step pending on exhausted reserved ports gets a real step ID at submission
 
 test_117_#   Testing of sstat options.
 ======================================
@@ -959,6 +962,7 @@ test_128_2   Test PreemptExemptTime for "suspend,gang","requeue", and "cancel"
 test_129_#   Testing of preserve-case slurmdbd parameters.
 ===========================================================
 test_129_1   PreserveCaseUser and PreserveCaseAll behavior
+test_129_2   Add/remove/add mixed case user over PCU transitions
 
 test_130_#   Testing of PriorityType.
 =====================================
@@ -1017,6 +1021,7 @@ test_141_#   Testing PowerSave/Cloud operations.
 test_141_1   Test state cycle, timeouts, scontrol commands, PowerDownOnIdle, and Node Features reboot
 test_141_2   Testing Global,Per-Partition,Per-Node Cloud Options
 test_141_3   Test node reboot and power down/up actions via slurmctld and slurmd
+test_141_4   Test srun to a powered down cloud node with enable_stepmgr
 
 test_143_#   Testing --switches.
 ================================
@@ -1025,7 +1030,7 @@ test_143_1   Test switches with topology/tree + select/cons_tres
 test_144_#   Testing of gres.
 ================================
 test_144_1   Test --exclusive allocation with gres flagged as explicit
-test_144_2   Test enforce-binding with GPUs that share cores
+test_144_2   Test enforce-binding jobs and --overlap steps with core-bound GPUs
 test_144_3   Test --exact with GPUs and multiple steps
 test_144_4   Test gres with file or type and --overlap
 test_144_6   Test gres with no_consume flag
@@ -1069,6 +1074,7 @@ test_150_5   Test slurmd first-registration gate for topology/instance/extra fie
 test_150_6   Test topology/tree + RouteTree relays a forwarded message once per switch
 test_150_7   Test topology preserved when a partial node update splits the config
 test_150_8   Test overcommit with cpus-per-task across a topology cluster
+test_150_9   Test bad topology.yaml handling
 
 test_151_#   Testing Oversubscribe
 ===========================================
@@ -1128,6 +1134,7 @@ test_162_#   Testing of swait and stepmgr/async-step integration.
 test_162_1   Test swait against a stepmgr-enabled cluster
 test_162_2   Test swait's steps-drained push path
 test_162_3   Test scontrol visibility and reconfigure-survival of async steps
+test_162_4   Verify pending synchronous step id-at-submit holds under stepmgr
 
 test_163_#   Testing jobacct_gather/cgroup memory accounting.
 =============================================================
@@ -1136,3 +1143,17 @@ test_163_1   Test completed accounting preserves short memory peaks
 test_164_#   Testing batch job launch recovery.
 =================================================
 test_164_1   Test a batch job survives a slurmctld reconfigure during its prolog
+
+test_165_#   Testing multi-partition allocated partition recovery and ordering
+==============================================================================
+test_165_1   Test multi-partition job/array keeps partition on restart
+test_165_2   Test completing job keeps partition on recovery
+test_165_3   Test multi-partition job keeps partition across changes
+test_165_4   Test partition PriorityTier ordering of a pending job
+
+test_166_#   Testing TLS.
+==========================
+test_166_1   Test RPC listeners reject non-TLS and accept TLS connections
+test_166_2   Test slurmctld rejects non-TLS RPCs with HTTP listening disabled
+test_166_3   Test swait's listener rejects non-TLS connections
+test_166_4   Test slurmdbd closes connections that are not TLS wrapped

@@ -119,6 +119,7 @@ static const struct {
 	T(FLAG_RPC_RECV_FORWARD),
 	T(FLAG_WAIT_ON_EXTRACT),
 	T(FLAG_IS_TLS_SHUTTING_DOWN),
+	T(FLAG_INITIATE_TLS_SHUTDOWN),
 };
 #undef T
 
@@ -865,6 +866,22 @@ extern int add_connection(conmgr_con_type_t type,
 				 __func__, fd);
 		}
 	}
+
+	/*
+	 * When TLS is enabled, fingerprint inbound inet RPC listeners so that
+	 * accepted connections detect an incoming TLS handshake. Unix domain
+	 * sockets and connections already pinned to TLS_SERVER or TLS_CLIENT
+	 * are exempt.
+	 *
+	 * NOTE: This only enables TLS fingerprinting on these connections.
+	 * Rejection of non-TLS connections is handled by
+	 * on_rpc_connection_data() for CON_TYPE_RPC connections. Any other
+	 * connection type must handle rejection in the caller.
+	 */
+	if (is_listen && (type == CON_TYPE_RPC) && conn_tls_enabled() &&
+	    (con->address.ss_family != AF_LOCAL) &&
+	    !con_flag(con, FLAG_TLS_SERVER) && !con_flag(con, FLAG_TLS_CLIENT))
+		con_set_flag(con, FLAG_TLS_FINGERPRINT);
 
 	if (has_out) {
 		int bytes = -1;
@@ -1808,12 +1825,27 @@ extern void con_close_on_poll_error(conmgr_fd_t *con, int fd)
 		/* Ask kernel for socket error */
 		int rc = SLURM_ERROR, err = SLURM_ERROR;
 
-		if ((rc = fd_get_socket_error(fd, &err)))
+		if ((rc = fd_get_socket_error(fd, &err))) {
 			error("%s: [%s] error while getting socket error: %s",
 			      __func__, con->name, slurm_strerror(rc));
-		else if (err) {
-			if (err == EPIPE)
-				err = SLURM_COMMUNICATIONS_DELAYED_ERROR;
+		} else if (err == EPIPE) {
+			/*
+			 * EPIPE here is not separately actionable. It is
+			 * usually a delayed error: a prior write() already
+			 * returned success and the kernel is only reporting
+			 * afterwards that the peer had closed. An RST that
+			 * arrives after the peer's FIN can also set EPIPE
+			 * without any local write. The connection is being
+			 * closed either way and the status code below carries
+			 * the condition to the callbacks, so this does not
+			 * warrant error(). A write that actually fails, and
+			 * therefore drops queued output, is still reported by
+			 * write_output().
+			 */
+			err = SLURM_COMMUNICATIONS_DELAYED_ERROR;
+			log_flag(CONMGR, "%s: [%s] socket error encountered while polling: %s",
+				 __func__, con->name, slurm_strerror(err));
+		} else if (err) {
 			error("%s: [%s] socket error encountered while polling: %s",
 			      __func__, con->name, slurm_strerror(err));
 		}

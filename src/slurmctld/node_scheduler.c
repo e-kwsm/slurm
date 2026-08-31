@@ -298,6 +298,7 @@ extern void set_job_node_addrs(job_record_t *job_ptr,
 extern void set_job_alias_list(job_record_t *job_ptr)
 {
 	node_record_t *node_ptr;
+	char *pos = NULL;
 
 	xfree(job_ptr->alias_list);
 
@@ -308,14 +309,11 @@ extern void set_job_alias_list(job_record_t *job_ptr)
 	     i++) {
 		if (IS_NODE_DYNAMIC_FUTURE(node_ptr) ||
 		    IS_NODE_DYNAMIC_NORM(node_ptr) ||
-		    (!cloud_dns && IS_NODE_CLOUD(node_ptr))) {
-			if (job_ptr->alias_list)
-				xstrcat(job_ptr->alias_list, ",");
-
-			xstrfmtcat(job_ptr->alias_list, "%s:[%s]:%s",
-				   node_ptr->name, node_ptr->comm_name,
-				   node_ptr->node_hostname);
-		}
+		    (!cloud_dns && IS_NODE_CLOUD(node_ptr)))
+			xstrfmtcatat(job_ptr->alias_list, &pos, "%s%s:[%s]:%s",
+				     job_ptr->alias_list ? "," : "",
+				     node_ptr->name, node_ptr->comm_name,
+				     node_ptr->node_hostname);
 	}
 
 	set_job_node_addrs(job_ptr, job_ptr->origin_cluster);
@@ -499,7 +497,8 @@ static void _log_feature_nodes(job_feature_t  *job_feat_ptr)
 {
 	char *tmp1, *tmp2, *tmp3, *tmp4 = NULL;
 
-	if (!(slurm_conf.debug_flags & DEBUG_FLAG_NODE_FEATURES))
+	if (!(slurm_conf.debug_flags & DEBUG_FLAG_NODE_FEATURES) ||
+	    (get_log_level() < LOG_LEVEL_VERBOSE))
 		return;
 
 	if (job_feat_ptr->op_code == FEATURE_OP_OR)
@@ -4674,6 +4673,7 @@ extern void re_kill_job(job_record_t *job_ptr)
 
 	if (job_ptr->node_bitmap_cg) {
 		for (int i = 0;
+		     job_ptr->node_bitmap_cg &&
 		     (node_ptr = next_node_bitmap(job_ptr->node_bitmap_cg, &i));
 		     i++) {
 			if (IS_NODE_DOWN(node_ptr)) {
@@ -4704,7 +4704,13 @@ extern void re_kill_job(job_record_t *job_ptr)
 		}
 	}
 
-	if (agent_args->node_count == 0) {
+	/*
+	 * cleanup_completing() above may have requeued the job. That frees
+	 * node_bitmap_cg and resets the job record, so create_kill_job_msg()
+	 * below would build a credential from cleared fields. Drop whatever
+	 * the loop gathered rather than send a message built from stale state.
+	 */
+	if (!job_ptr->node_bitmap_cg || (agent_args->node_count == 0)) {
 		FREE_NULL_HOSTLIST(agent_args->hostlist);
 		xfree(agent_args);
 		hostlist_destroy(kill_hostlist);

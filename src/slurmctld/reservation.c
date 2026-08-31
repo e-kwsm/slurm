@@ -8198,6 +8198,9 @@ extern int job_test_resv(job_record_t *job_ptr, time_t *when,
 	}
 
 	if (job_ptr->resv_name) {
+		list_itr_t *iter;
+		slurmctld_resv_t *res2_ptr;
+
 		if (!job_ptr->resv_ptr) {
 			rc2 = validate_job_resv(job_ptr);
 			if (rc2 != SLURM_SUCCESS)
@@ -8281,8 +8284,17 @@ extern int job_test_resv(job_record_t *job_ptr, time_t *when,
 		 */
 		args.job_end_time = job_end_time;
 		args.job_start_time = job_start_time;
-		list_for_each_ro(resv_list, _foreach_job_test_resv_overlap,
-				 &args);
+
+		/*
+		 * This needs to be an iterator since
+		 * _foreach_job_test_resv_overlap() may eventually call
+		 * _advance_resv_time() which may call _generate_resv_id() which
+		 * will deadlock the resv_list lock.
+		 */
+		iter = list_iterator_create(resv_list);
+		while ((res2_ptr = list_next(iter)))
+			_foreach_job_test_resv_overlap(res2_ptr, &args);
+		list_iterator_destroy(iter);
 
 		if (slurm_conf.debug_flags & DEBUG_FLAG_RESERVATION) {
 			char *nodes = bitmap2node_name(*node_bitmap);
@@ -8324,10 +8336,24 @@ extern int job_test_resv(job_record_t *job_ptr, time_t *when,
 	 * run and get it's required nodes (if any)
 	 */
 	for (i = 0; ; i++) {
+		slurmctld_resv_t *resv;
+		list_itr_t *iter;
 		args.job_end_time = job_end_time;
 		args.job_start_time = job_start_time;
 		lic_resv_time = (time_t) 0;
-		list_for_each_ro(resv_list, _foreach_job_test_no_resv, &args);
+
+		/*
+		 * This needs to be an iterator since
+		 * _foreach_job_test_no_resv() may eventually call
+		 * _advance_resv_time() which may eventually call
+		 * _generate_resv_id() which will deadlock the resv_list lock.
+		 */
+		iter = list_iterator_create(resv_list);
+		while ((resv = list_next(iter))) {
+			if (_foreach_job_test_no_resv(resv, &args) < 0)
+				break;
+		}
+		list_iterator_destroy(iter);
 
 		if (resv_exc_ptr) {
 			free_core_array(&resv_exc_ptr->exc_cores);
@@ -8849,10 +8875,8 @@ static int _set_node_maint_mode(bool reset_all, bitstr_t *node_down_bitmap)
 	flags = NODE_STATE_RES;
 	if (reset_all)
 		flags |= NODE_STATE_MAINT;
-	for (i = 0; (node_ptr = next_node(&i)); i++) {
+	for (i = 0; (node_ptr = next_node(&i)); i++)
 		node_ptr->node_state &= (~flags);
-		xfree(node_ptr->resv_name);
-	}
 
 	if (!reset_all) {
 		/*
@@ -8912,6 +8936,11 @@ static int _set_node_maint_mode(bool reset_all, bitstr_t *node_down_bitmap)
 		}
 	}
 	list_iterator_destroy(iter);
+
+	for (i = 0; (node_ptr = next_node(&i)); i++) {
+		if (!IS_NODE_RES(node_ptr))
+			xfree(node_ptr->resv_name);
+	}
 
 	return res_start_cnt;
 }
@@ -9110,9 +9139,12 @@ static void _set_nodes_flags(slurmctld_resv_t *resv_ptr, time_t now,
 				    IS_NODE_FAIL(node_ptr))) {
 			bit_set(node_down_bitmap, i);
 		}
-		xfree(node_ptr->resv_name);
-		if (IS_NODE_RES(node_ptr))
+		if (!IS_NODE_RES(node_ptr)) {
+			xfree(node_ptr->resv_name);
+		} else if (xstrcmp(node_ptr->resv_name, resv_ptr->name)) {
+			xfree(node_ptr->resv_name);
 			node_ptr->resv_name = xstrdup(resv_ptr->name);
+		}
 	}
 	FREE_NULL_BITMAP(maint_node_bitmap);
 }

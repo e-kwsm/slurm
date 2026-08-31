@@ -2182,8 +2182,17 @@ static int PARSE_FUNC(USER_ID)(const parser_t *const parser, void *obj,
 					   src);
 		/* fall through */
 	case DATA_TYPE_INT_64:
-		uid = data_get_int(src);
+	{
+		int64_t tmp_val = data_get_int(src);
+		if ((tmp_val < 0) || (tmp_val > UINT32_MAX))
+			return parse_error(
+				parser, args, parent_path,
+				ESLURM_USER_ID_INVALID,
+				"Invalid user ID (overflow): %" PRId64,
+				tmp_val);
+		uid = tmp_val;
 		break;
+	}
 	case DATA_TYPE_STRING:
 	{
 		int rc;
@@ -2220,11 +2229,6 @@ static int PARSE_FUNC(USER_ID)(const parser_t *const parser, void *obj,
 	case DATA_TYPE_MAX:
 		fatal_abort("invalid type");
 	}
-
-	if (uid >= INT_MAX)
-		return parse_error(parser, args, parent_path,
-				   ESLURM_USER_ID_INVALID,
-				   "Invalid user ID: %d", uid);
 
 	*uid_ptr = uid;
 
@@ -2273,8 +2277,17 @@ static int PARSE_FUNC(GROUP_ID)(const parser_t *const parser, void *obj,
 					   src);
 		/* fall through */
 	case DATA_TYPE_INT_64:
-		gid = data_get_int(src);
+	{
+		int64_t tmp_val = data_get_int(src);
+		if ((tmp_val < 0) || (tmp_val > UINT32_MAX))
+			return parse_error(
+				parser, args, parent_path,
+				ESLURM_GROUP_ID_INVALID,
+				"Invalid group ID (overflow): %" PRId64,
+				tmp_val);
+		gid = tmp_val;
 		break;
+	}
 	case DATA_TYPE_STRING:
 	{
 		int rc;
@@ -2311,11 +2324,6 @@ static int PARSE_FUNC(GROUP_ID)(const parser_t *const parser, void *obj,
 	case DATA_TYPE_MAX:
 		fatal_abort("invalid type");
 	}
-
-	if (gid >= INT_MAX)
-		return parse_error(parser, args, parent_path,
-				   ESLURM_GROUP_ID_INVALID,
-				   "Invalid group ID: %d", gid);
 
 	*gid_ptr = gid;
 
@@ -6820,10 +6828,10 @@ static int PARSE_FUNC(KILL_JOBS_MSG_JOBS_ARRAY)(const parser_t *const parser,
 			rc = fargs.rc;
 		}
 	} else {
-		rc = on_error(DUMPING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -6881,10 +6889,10 @@ static int PARSE_FUNC(KILL_JOBS_RESP_MSG)(const parser_t *const parser,
 	kill_jobs_resp_msg_t *msg = obj;
 
 	if (data_get_type(src) != DATA_TYPE_LIST)
-		return on_error(PARSING, parser->type, args,
-				ESLURM_DATA_CONV_FAILED, __func__, __func__,
-				"Unexpected type %s when expecting a list",
-				data_type_to_string(data_get_type(src)));
+		return parse_error(parser, args, parent_path,
+				   ESLURM_DATA_CONV_FAILED,
+				   "Unexpected type %s when expecting a list",
+				   data_type_to_string(data_get_type(src)));
 
 	msg->jobs_cnt = data_get_list_length(src);
 
@@ -6902,6 +6910,7 @@ static int PARSE_FUNC(KILL_JOBS_RESP_MSG)(const parser_t *const parser,
 		(void) data_list_for_each(src,
 					  _foreach_parse_kill_jobs_resp_job,
 					  &fargs);
+		rc = fargs.rc;
 	}
 
 	return rc;
@@ -6979,10 +6988,10 @@ static int PARSE_FUNC(TOPOLOGY_CONF_ARRAY)(const parser_t *const parser,
 		fargs.array = ctx_array->tctx;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7024,7 +7033,7 @@ static int PARSE_FUNC(TOPOLOGY_TREE)(const parser_t *const parser, void *obj,
 		rc = SLURM_ERROR;
 		parse_error(
 			parser, args, parent_path, rc,
-			"Field tree is mutually excusive with fields block and flat");
+			"Field tree is mutually exclusive with fields block and flat");
 	} else if (src_dict_count) {
 		tctx->plugin = xstrdup("topology/tree");
 		rc = PARSE(TOPOLOGY_TREE_CONFIG_PTR, tctx->config, src,
@@ -7094,10 +7103,10 @@ static int PARSE_FUNC(TOPOLOGY_TREE_CONFIG_ARRAY)(const parser_t *const parser,
 		fargs.array = tree_configs->switch_configs;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7139,7 +7148,7 @@ static int PARSE_FUNC(TOPOLOGY_BLOCK)(const parser_t *const parser, void *obj,
 	if (tctx->plugin && src_dict_count) {
 		rc = parse_error(
 			parser, args, parent_path, SLURM_ERROR,
-			"Field block is mutually excusive with fields tree and flat");
+			"Field block is mutually exclusive with fields tree and flat");
 	} else if (src_dict_count) {
 		tctx->plugin = xstrdup("topology/block");
 		rc = PARSE(TOPOLOGY_BLOCK_CONFIG_PTR, tctx->config, src,
@@ -7209,10 +7218,10 @@ static int PARSE_FUNC(TOPOLOGY_BLOCK_CONFIG_ARRAY)(const parser_t *const parser,
 		fargs.array = block_configs->block_configs;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7319,7 +7328,7 @@ static int PARSE_FUNC(TOPOLOGY_RING)(const parser_t *const parser, void *obj,
 	if (tctx->plugin && src_dict_count) {
 		rc = parse_error(
 			parser, args, parent_path, SLURM_ERROR,
-			"Field ring is mutually excusive with fields block, tree and flat");
+			"Field ring is mutually exclusive with fields block, tree and flat");
 	} else if (src_dict_count) {
 		tctx->plugin = xstrdup("topology/ring");
 		rc = PARSE(TOPOLOGY_RING_CONFIG_PTR, tctx->config, src,
@@ -7443,10 +7452,10 @@ static int PARSE_FUNC(TORUS3D_PLACEMENT_ARRAY)(const parser_t *const parser,
 		fargs.array = config->placements;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7483,10 +7492,10 @@ static int PARSE_FUNC(TORUS3D_REGION_ARRAY)(const parser_t *const parser,
 		fargs.array = config->regions;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7570,10 +7579,10 @@ static int PARSE_FUNC(TOPOLOGY_RING_CONFIG_ARRAY)(const parser_t *const parser,
 		fargs.array = ring_configs->ring_configs;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -7634,10 +7643,10 @@ static int PARSE_FUNC(TOPOLOGY_TORUS3D_CONFIG_ARRAY)(const parser_t
 		fargs.array = torus3d_configs->torus3d_configs;
 		(void) data_list_for_each(src, _foreach_topo_array, &fargs);
 	} else {
-		rc = on_error(PARSING, parser->type, args,
-			      ESLURM_DATA_CONV_FAILED, __func__, __func__,
-			      "Unexpected type %s when expecting a list",
-			      data_type_to_string(data_get_type(src)));
+		rc = parse_error(parser, args, parent_path,
+				 ESLURM_DATA_CONV_FAILED,
+				 "Unexpected type %s when expecting a list",
+				 data_type_to_string(data_get_type(src)));
 	}
 
 	return rc;
@@ -12072,7 +12081,7 @@ static const flag_bit_t PARSER_FLAG_ARRAY(CONF_FLAGS_SLURMD_PARAMETERS)[] = {
 	add_flag_bit_desc(CONF_FLAG_NNSOCK, "numa_node_as_socket", "Use the hwloc NUMA Node to determine main hierarchy object to be used as socket."),
 	add_flag_bit_desc(CONF_FLAG_ECORE, "allow_ecores", "If set, and processors on your nodes have E-Cores, allows them to be used for scheduling and task placement."),
 	add_flag_bit_desc(CONF_FLAG_SHR, "shutdown_on_reboot", "If set, the Slurmd will shut itself down when a reboot request is received."),
-	add_flag_bit_desc(CONF_FLAG_CONTAIN_SPANK, "contain_spank", "If set and a job_container plugin is specified, the spank_user(), spank_task_post_fork() and spank_task_exit() calls will be run inside the job container."),
+	add_flag_bit_desc(CONF_FLAG_CONTAIN_SPANK, "contain_spank", "If set and a namespace plugin is specified, the spank_user(), spank_task_post_fork(), and spank_task_exit() calls will be run inside the job's namespace."),
 };
 
 /* based on cpu_freq_govlist_to_string() and _cpu_freq_govspec_string() */
@@ -12474,7 +12483,7 @@ static const parser_t PARSER_ARRAY(SLURM_CONF)[] = {
 	add_parse(STRING, mpi_default, "MpiDefault", "Default type of MPI to be used"),
 	add_parse(CSV_STRING, mpi_params, "MpiParams", "MPI parameters"),
 	add_parse(UINT16, msg_timeout, "MessageTimeout", "Seconds permitted for a round-trip communication to complete"),
-	add_parse(STRING, namespace_plugin, "NamespaceType", "Job container plugin type"),
+	add_parse(STRING, namespace_plugin, "NamespaceType", "Namespace plugin type"),
 	add_skip(next_job_id),
 	add_skip(node_features_conf),
 	add_parse(CSV_STRING, node_features_plugins, "NodeFeaturesPlugins", "List of node_features plugins to use"),

@@ -1267,6 +1267,11 @@ typedef enum {
 						  * CONSOLIDATE_SEGMENTS */
 #define ALLOW_OVERCOMMIT_TRES_PER_TASK SLURM_BIT(50) /* overcommit with unset or
 						   * cpu-only tres_per_task */
+#define BF_CURRENT_JOB_NOT_UPDATED SLURM_BIT(51) /* Set if backfill is
+						  * evaluating this job but is
+						  * yielding locks to track if
+						  * the job has been updated in
+						  * the yield */
 
 /* These bits are set in the x11 field of job_desc_msg_t */
 #define X11_FORWARD_ALL		0x0001	/* all nodes should setup forward */
@@ -2335,11 +2340,11 @@ typedef struct {
 } slurm_allocation_callbacks_t;
 
 typedef struct {
-	void (*acct_full)();
-	void (*dbd_fail)();
-	void (*dbd_resumed)();
-	void (*db_fail)();
-	void (*db_resumed)();
+	void (*acct_full)(void);
+	void (*dbd_fail)(void);
+	void (*dbd_resumed)(void);
+	void (*db_fail)(void);
+	void (*db_resumed)(void);
 } slurm_trigger_callbacks_t;
 
 typedef struct {

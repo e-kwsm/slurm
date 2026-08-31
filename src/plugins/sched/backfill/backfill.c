@@ -329,7 +329,7 @@ static int  _try_sched(job_record_t *job_ptr, bitstr_t **avail_bitmap,
 		       uint32_t min_nodes, uint32_t max_nodes,
 		       uint32_t req_nodes, resv_exc_t *resv_exc_ptr,
 		       will_run_data_t *will_run);
-static int  _yield_locks(int64_t usec);
+static int _yield_locks(int64_t usec, job_record_t *job_ptr, bool *job_updated);
 static void _bf_map_key_id(void *item, const void **key, uint32_t *key_len);
 static void _bf_map_free(void *item);
 
@@ -338,6 +338,9 @@ static void _dump_job_sched(job_record_t *job_ptr, time_t end_time,
 			    bitstr_t *avail_bitmap)
 {
 	char begin_buf[256], end_buf[256], *node_list;
+
+	if (get_log_level() < LOG_LEVEL_VERBOSE)
+		return;
 
 	slurm_make_time_str(&job_ptr->start_time, begin_buf, sizeof(begin_buf));
 	slurm_make_time_str(&end_time, end_buf, sizeof(end_buf));
@@ -355,6 +358,9 @@ static void _dump_job_test(job_record_t *job_ptr, bitstr_t *avail_bitmap,
 	char end_buf[256];
 	char later_buf[256];
 
+	if (get_log_level() < LOG_LEVEL_VERBOSE)
+		return;
+
 	if (start_time == 0)
 		strcpy(begin_buf, "NOW");
 	else
@@ -368,7 +374,7 @@ static void _dump_job_test(job_record_t *job_ptr, bitstr_t *avail_bitmap,
 	slurm_make_time_str(&later_start, end_buf, sizeof(end_buf));
 
 	node_list = bitmap2node_name(avail_bitmap);
-	log_flag(BACKFILL, "Test %pJ at %s to %s (later_start: %s) on %s",
+	log_flag(BACKFILL_MAP, "Test %pJ at %s to %s (later_start: %s) on %s",
 		 job_ptr, begin_buf, end_buf, later_buf, node_list);
 	xfree(node_list);
 }
@@ -379,7 +385,10 @@ static void _dump_node_space_table(node_space_map_t *node_space_ptr)
 	int i = 0;
 	char begin_buf[256], end_buf[256], *node_list, *licenses;
 
-	log_flag(BACKFILL, "=========================================");
+	if (get_log_level() < LOG_LEVEL_VERBOSE)
+		return;
+
+	log_flag(BACKFILL_MAP, "=========================================");
 	while (1) {
 		slurm_make_time_str(&node_space_ptr[i].begin_time,
 				    begin_buf, sizeof(begin_buf));
@@ -387,7 +396,7 @@ static void _dump_node_space_table(node_space_map_t *node_space_ptr)
 				    end_buf, sizeof(end_buf));
 		node_list = bitmap2node_name(node_space_ptr[i].avail_bitmap);
 		licenses = bf_licenses_to_string(node_space_ptr[i].licenses);
-		log_flag(BACKFILL, "Begin:%s End:%s Nodes:%s Licenses:%s Fragmentation:%u",
+		log_flag(BACKFILL_MAP, "Begin:%s End:%s Nodes:%s Licenses:%s Fragmentation:%u",
 			 begin_buf, end_buf, node_list, licenses,
 			 node_space_ptr[i].fragmentation);
 		xfree(node_list);
@@ -395,7 +404,7 @@ static void _dump_node_space_table(node_space_map_t *node_space_ptr)
 		if ((i = node_space_ptr[i].next) == 0)
 			break;
 	}
-	log_flag(BACKFILL, "=========================================");
+	log_flag(BACKFILL_MAP, "=========================================");
 }
 
 static void _set_job_time_limit(job_record_t *job_ptr, uint32_t new_limit)
@@ -1293,8 +1302,13 @@ static int _clear_job_estimates(void *x, void *arg)
 /*
  * Return non-zero to break the backfill loop if change in job, node,
  * reservation or partition state or the backfill scheduler needs to be stopped.
+ * IN usec - Number of usec to sleep while yielding
+ * IN job_ptr - If job_updated is set, set BF_CURRENT_JOB_NOT_UPDATED in
+ *		bit_flags while locks are yielded, then unset it
+ * OUT job_updated - If not NULL, set to true if the job's values were updated
+ *		     during the yield, else false.
  */
-static int _yield_locks(int64_t usec)
+static int _yield_locks(int64_t usec, job_record_t *job_ptr, bool *job_updated)
 {
 	slurmctld_lock_t all_locks = {
 		.conf = READ_LOCK,
@@ -1313,6 +1327,10 @@ static int _yield_locks(int64_t usec)
 	config_update = slurm_conf.last_update;
 	resv_update = last_resv_update;
 
+	xassert(!job_updated || job_ptr);
+
+	if (job_updated)
+		job_ptr->bit_flags |= BF_CURRENT_JOB_NOT_UPDATED;
 	unlock_slurmctld(all_locks);
 	while (!stop_backfill) {
 		bf_sleep_usec += _my_sleep(usec);
@@ -1327,6 +1345,14 @@ static int _yield_locks(int64_t usec)
 		slurm_mutex_unlock(&slurmctld_config.thread_count_lock);
 	}
 	lock_slurmctld(all_locks);
+
+	if (job_updated) {
+		/* _update_job() removes BF_CURRENT_JOB_NOT_UPDATED */
+		*job_updated =
+			!(job_ptr->bit_flags & BF_CURRENT_JOB_NOT_UPDATED);
+		job_ptr->bit_flags &= ~BF_CURRENT_JOB_NOT_UPDATED;
+	}
+
 	slurm_mutex_lock(&config_lock);
 	if (config_flag)
 		load_config = true;
@@ -2168,6 +2194,71 @@ static int _hres_pre_select(job_record_t *job_ptr, node_space_map_t *node_space,
 	return SLURM_SUCCESS;
 }
 
+/*
+ * Validate that the job's deadline can be met.
+ * IN job_ptr - The job record to evaluate the deadline of
+ * IN now - time_t representing now
+ * OUT deadline_time_limit - # of minutes remaining before job deadline
+ * RETURN - true if job deadline can be met, else false
+ */
+static bool _validate_deadline(job_record_t *job_ptr, time_t now,
+			       uint32_t *deadline_time_limit)
+{
+	/* test of deadline */
+	*deadline_time_limit = 0;
+	if ((job_ptr->deadline) && (job_ptr->deadline != NO_VAL)) {
+		if (!deadline_ok(job_ptr, __func__))
+			return false;
+
+		*deadline_time_limit = (job_ptr->deadline - now) / 60;
+	}
+	return true;
+}
+
+/*
+ * Set backfill time limit variables.
+ * IN deadline_time_limit - # of minutes remaining before job deadline
+ * IN part_max_time - Partition's configured max time limit
+ * IN qos_flags - QOS flags to check if QOS_FLAG_NO_RESERVE is set
+ * IN/OUT job_ptr - Uses time_min and time_limit, can set time_limit
+ * OUT time_limit - time limit to use when evaluating the job
+ * OUT comp_time_limit - completion time limit
+ */
+static void _set_backfill_timelimits(uint32_t deadline_time_limit,
+				     uint32_t part_max_time, uint32_t qos_flags,
+				     job_record_t *job_ptr,
+				     uint32_t *comp_time_limit,
+				     uint32_t *time_limit)
+{
+	uint32_t part_time_limit;
+
+	if (part_max_time == INFINITE)
+		part_time_limit = YEAR_MINUTES;
+	else
+		part_time_limit = part_max_time;
+
+	/* Determine job's expected completion time */
+	if ((job_ptr->time_limit == NO_VAL) ||
+	    (job_ptr->time_limit == INFINITE)) {
+		*time_limit = part_time_limit;
+		job_ptr->limit_set.time = 1;
+	} else {
+		if (part_max_time == INFINITE)
+			*time_limit = job_ptr->time_limit;
+		else
+			*time_limit = MIN(job_ptr->time_limit, part_time_limit);
+	}
+	if (deadline_time_limit)
+		*comp_time_limit = MIN(*time_limit, deadline_time_limit);
+	else if (job_ptr->time_min && (job_ptr->time_min < *time_limit)) {
+		*comp_time_limit = *time_limit;
+		*time_limit = job_ptr->time_limit = job_ptr->time_min;
+	} else
+		*comp_time_limit = *time_limit;
+	if ((qos_flags & QOS_FLAG_NO_RESERVE) && slurm_conf.preempt_mode)
+		*time_limit = job_ptr->time_limit = 1;
+}
+
 /* This is for use in _attempt_backfill() only */
 #define SKIP_SCHED_OR_TRY_LATER(job_ptr, job_no_reserve, later_start,	\
 				orig_time_limit, orig_start_time)	\
@@ -2201,7 +2292,7 @@ static void _attempt_backfill(void)
 	part_record_t *part_ptr;
 	uint32_t end_time, end_reserve, deadline_time_limit, boot_time;
 	uint32_t orig_end_time;
-	uint32_t time_limit, comp_time_limit, orig_time_limit = 0, part_time_limit;
+	uint32_t time_limit, comp_time_limit, orig_time_limit = 0;
 	uint32_t min_nodes, max_nodes, req_nodes;
 	bitstr_t *active_bitmap = NULL, *avail_bitmap = NULL;
 	bitstr_t *resv_bitmap = NULL, *excluded_topo_bitmap = NULL;
@@ -2461,7 +2552,7 @@ static void _attempt_backfill(void)
 			/* Sync planned nodes before yielding locks */
 			nodes_planned = true;
 			_handle_planned(nodes_planned);
-			if (_yield_locks(yield_sleep)) {
+			if (_yield_locks(yield_sleep, NULL, NULL)) {
 				log_flag(BACKFILL, "system state changed, breaking out after testing %u(%d) jobs",
 					 slurmctld_diag_stats.bf_last_depth,
 					 job_test_count);
@@ -2524,7 +2615,13 @@ static void _attempt_backfill(void)
 		job_ptr->bit_flags |= BACKFILL_SCHED;
 		job_ptr->last_sched_eval = now;
 		job_ptr->part_ptr = part_ptr;
-		job_ptr->priority = bf_job_priority;
+		/*
+		 * Don't reset priority changed during yield - job entry may be
+		 * out of priority order now, but continuing because bf_continue
+		 * is set in that case.
+		 */
+		if (!job_ptr->direct_set_prio)
+			job_ptr->priority = bf_job_priority;
 		job_ptr->qos_ptr = qos_ptr;
 		if (qos_ptr)
 			job_ptr->qos_id = qos_ptr->id;
@@ -2771,43 +2868,15 @@ next_task:
 			continue;
 		}
 
-		/* test of deadline */
+		/* Prepare to test of deadline */
 		now = time(NULL);
-		deadline_time_limit = 0;
-		if ((job_ptr->deadline) && (job_ptr->deadline != NO_VAL)) {
-			if (!deadline_ok(job_ptr, __func__))
-				continue;
-
-			deadline_time_limit = (job_ptr->deadline - now) / 60;
-		}
+		if (!_validate_deadline(job_ptr, now, &deadline_time_limit))
+			continue;
 
 		/* Determine job's expected completion time */
-		if (part_ptr->max_time == INFINITE)
-			part_time_limit = YEAR_MINUTES;
-		else
-			part_time_limit = part_ptr->max_time;
-		if ((job_ptr->time_limit == NO_VAL) ||
-		    (job_ptr->time_limit == INFINITE)) {
-			time_limit = part_time_limit;
-			job_ptr->limit_set.time = 1;
-		} else {
-			if (part_ptr->max_time == INFINITE)
-				time_limit = job_ptr->time_limit;
-			else
-				time_limit = MIN(job_ptr->time_limit,
-						 part_time_limit);
-		}
-		if (deadline_time_limit)
-			comp_time_limit = MIN(time_limit, deadline_time_limit);
-		else if (job_ptr->time_min &&
-			 (job_ptr->time_min < time_limit)) {
-			comp_time_limit = time_limit;
-			time_limit = job_ptr->time_limit = job_ptr->time_min;
-		} else
-			comp_time_limit = time_limit;
-		if ((qos_flags & QOS_FLAG_NO_RESERVE) &&
-		    slurm_conf.preempt_mode)
-			time_limit = job_ptr->time_limit = 1;
+		_set_backfill_timelimits(deadline_time_limit,
+					 part_ptr->max_time, qos_flags, job_ptr,
+					 &comp_time_limit, &time_limit);
 
 		later_start = now;
 		used_slots = 0;
@@ -2844,6 +2913,7 @@ TRY_LATER:
 
 		if (many_rpcs || (slurm_delta_tv(&start_tv) >= yield_interval)) {
 			uint32_t save_time_limit = job_ptr->time_limit;
+			bool job_updated = false;
 			_set_job_time_limit(job_ptr, orig_time_limit);
 			if (slurm_conf.debug_flags & DEBUG_FLAG_BACKFILL) {
 				END_TIMER;
@@ -2855,7 +2925,7 @@ TRY_LATER:
 			/* Sync planned nodes before yielding locks */
 			nodes_planned = true;
 			_handle_planned(nodes_planned);
-			if (_yield_locks(yield_sleep)) {
+			if (_yield_locks(yield_sleep, job_ptr, &job_updated)) {
 				log_flag(BACKFILL, "system state changed, breaking out after testing %u(%d) jobs",
 					 slurmctld_diag_stats.bf_last_depth,
 					 job_test_count);
@@ -2917,7 +2987,34 @@ TRY_LATER:
 				continue;
 			}
 
-			job_ptr->time_limit = save_time_limit;
+			/*
+			 * Reset the backfill timelimit vars if job updated
+			 * since the job_ptr's timelimit, time_min, and deadline
+			 * could have been changed.
+			 */
+			if (job_updated) {
+				/*
+				 * Reset orig_time_limit if job_ptr->time_limit
+				 * was updated by user during yield.
+				 */
+				if ((job_ptr->time_limit != orig_time_limit) &&
+				    (job_ptr->limit_set.time != 1))
+					orig_time_limit = job_ptr->time_limit;
+				else
+					job_ptr->time_limit = orig_time_limit;
+
+				if (!_validate_deadline(job_ptr, now,
+							&deadline_time_limit))
+					continue;
+
+				_set_backfill_timelimits(deadline_time_limit,
+							 part_ptr->max_time,
+							 qos_flags, job_ptr,
+							 &comp_time_limit,
+							 &time_limit);
+			} else {
+				job_ptr->time_limit = save_time_limit;
+			}
 			job_ptr->part_ptr = part_ptr;
 			job_ptr->qos_ptr = qos_ptr;
 			if (qos_ptr)
@@ -3903,9 +4000,11 @@ static int _start_job(job_record_t *job_ptr, bitstr_t *resv_bitmap)
 		last_job_update = time(NULL);
 		log_flag(HETJOB, "Started %pJ in %s on %s",
 		     job_ptr, job_ptr->part_ptr->name, job_ptr->nodes);
-		if (job_ptr->batch_flag == 0)
+		if (job_ptr->batch_flag == 0) {
 			srun_allocate(job_ptr);
-		else if (!IS_JOB_CONFIGURING(job_ptr))
+			if (job_ptr->het_job_id)
+				launch_het_job_leader(job_ptr);
+		} else if (!IS_JOB_CONFIGURING(job_ptr))
 			launch_job(job_ptr);
 		slurmctld_diag_stats.backfilled_jobs++;
 		slurmctld_diag_stats.last_backfilled_jobs++;
@@ -3915,15 +4014,16 @@ static int _start_job(job_record_t *job_ptr, bitstr_t *resv_bitmap)
 			 slurmctld_diag_stats.backfilled_jobs);
 	} else if ((job_ptr->job_id != fail_jobid) &&
 		   (rc != ESLURM_ACCOUNTING_POLICY)) {
-		char *node_list;
 		bit_not(resv_bitmap);
-		node_list = bitmap2node_name(resv_bitmap);
 		/* This happens when a job has sharing disabled and
 		 * a selected node is still completing some job,
 		 * which should be a temporary situation. */
-		verbose("Failed to start %pJ with %s avail: %s",
-			job_ptr, node_list, slurm_strerror(rc));
-		xfree(node_list);
+		if (get_log_level() >= LOG_LEVEL_VERBOSE) {
+			char *node_list = bitmap2node_name(resv_bitmap);
+			verbose("Failed to start %pJ with %s avail: %s",
+				job_ptr, node_list, slurm_strerror(rc));
+			xfree(node_list);
+		}
 		fail_jobid = job_ptr->job_id;
 	} else {
 		debug3("Failed to start %pJ: %s",

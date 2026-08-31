@@ -510,6 +510,19 @@ def classify_coredump(bin_path, bt_file, failures, xfailures, slurm_prefix=""):
         failures.append(reason)
         return
 
+    reason = "Issue 50974: Known issue about slurmd stuck waiting for a completing job during shutdown. Seems fixed in 26.05+"
+    component = "sbin/slurmd"
+    if (
+        component in bin_path
+        and "pause_for_job_completion" in bt
+        and "_rpc_terminate_job" in bt
+    ):
+        if get_version(component, slurm_prefix=slurm_prefix) >= (26, 5):
+            failures.append(reason)
+        else:
+            xfailures.append(reason)
+        return
+
     reason = "Issue 51060: slurmctld - SIGABRT: _kill_job_step(): Assertion (job_ptr->job_id == job_step_kill_msg->step_id.job_id) failed"
     component = "sbin/slurmctld"
     if (
@@ -1156,10 +1169,13 @@ def gcore(component, pid=None, sbin=True):
 
     logging.debug(f"Getting gcores and sending SIGPROF to PIDs: {pids}")
     for pid in pids:
-        run_command(f"kill -SIGPROF {pid}", user="root")
         run_command(
             f"sudo gcore -o {properties['slurm-logs-dir']}/{component}.core {pid}"
         )
+
+        # Sending SIGPROF should be the last thing, because if it's not handled
+        # properly it defaults to behave like SIGTERM.
+        run_command(f"kill -SIGPROF {pid}", user="root")
 
 
 def start_slurmd(slurmd_name, quiet=False):
@@ -3512,6 +3528,35 @@ def require_config_parameter_excludes(name, value, source="slurm"):
             )
 
 
+def require_tls():
+    """Skips the test unless the cluster is configured to use TLS.
+
+    Unlike require_config_parameter('TLSType', ...), this never enables TLS in
+    auto-config mode: a working TLSType needs certificate infrastructure (a CA,
+    per-daemon certificates and the TLSParameters pointing at them) that cannot
+    be synthesized here, so a cluster without it is skipped in both modes.
+
+    The config file is consulted first so that a non-TLS cluster is skipped
+    without having to start Slurm. That read does not follow Include
+    directives, so a TLSType found only in an included file reads as absent
+    here; fall back to the live value when the file says nothing and a
+    controller is available.
+
+    Returns:
+        None
+    """
+    tls_type = get_config_parameter("TLSType", default=None, live=False, quiet=True)
+    if tls_type is None and is_slurmctld_running(quiet=True):
+        tls_type = get_config_parameter("TLSType", default=None, quiet=True)
+
+    if not tls_type or tls_type.casefold() == "tls/none":
+        pytest.skip(
+            "This test requires the TLSType parameter to be set to a TLS "
+            "plugin such as tls/s2n (run under the -s2n test variant)",
+            allow_module_level=True,
+        )
+
+
 def require_tty(number):
     """Creates a TTY device file if it does not exist.
 
@@ -5043,18 +5088,24 @@ def wait_for_node_state(
     return False
 
 
-def wait_for_step(job_id, step_id, **repeat_until_kwargs):
-    """Wait for the specified step of a job to be running.
+def wait_for_step(job_id, step_id, state="RUNNING", **repeat_until_kwargs):
+    """Wait for the specified step of a job to reach a state.
 
-    Continuously polls the step state until it becomes running or until a
-    timeout occurs.
+    Continuously polls the step state until it matches or until a timeout
+    occurs.
 
     Args:
         job_id (integer): The id of the job.
         step_id (integer): The id of the step within the job.
+        state (string): The step state to wait for, or None to wait only for
+            the step to exist. Defaults to RUNNING. Existence alone is not
+            enough: a step queued waiting for resources is already listed by
+            `scontrol show step`, under the StepId it was assigned at
+            submission, while it is still PENDING.
 
     Returns:
-        A boolean value indicating whether the specified step is running or not.
+        A boolean value indicating whether the specified step reached the
+        state or not.
 
     Example:
         >>> wait_for_step(1234, 0, timeout=60, poll_interval=5, fatal=True)
@@ -5064,9 +5115,14 @@ def wait_for_step(job_id, step_id, **repeat_until_kwargs):
     """
 
     step_str = f"{job_id}.{step_id}"
+    # A het step is rendered "<job>.<step>+<comp>" on some releases, so end the
+    # id at a separator rather than requiring whitespace.
+    pattern = rf"StepId={re.escape(step_str)}(?=[\s+]|$)"
+    if state is not None:
+        pattern += rf".*\bState={state}\b"
     return repeat_until(
         lambda: run_command_output(f"scontrol -o show step {step_str}"),
-        lambda out: re.search(rf"StepId={step_str}", out) is not None,
+        lambda out: re.search(pattern, out) is not None,
         **repeat_until_kwargs,
     )
 
