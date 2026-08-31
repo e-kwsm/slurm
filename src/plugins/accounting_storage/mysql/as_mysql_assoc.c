@@ -1255,7 +1255,8 @@ static int _process_modify_assoc_results(mysql_conn_t *mysql_conn,
 
 		if (assoc->parent_acct && row[MASSOC_PACCT][0]) {
 			account = assoc->parent_acct;
-			moved_parent = 1;
+			if (xstrcasecmp(row[MASSOC_PACCT], assoc->parent_acct))
+				moved_parent = 1;
 
 			if (!checked_parent_is_not_child) {
 				slurmdb_assoc_rec_t par_assoc = {
@@ -1418,9 +1419,24 @@ static int _process_modify_assoc_results(mysql_conn_t *mysql_conn,
 					continue;
 				} else if (!xstrcasecmp(row[MASSOC_PACCT],
 							assoc->parent_acct)) {
-					DB_DEBUG(DB_ASSOC, mysql_conn->conn,
-						 "Trying to move association to the same parent? Nothing to do.");
-					continue;
+					/*
+					 * Only skip when there is no other
+					 * column update. Callers (e.g.
+					 * sacctmgr declarative load) set
+					 * parent_acct to the current parent;
+					 * matching the row is normal, not a
+					 * redundant reparent. qos_list is not
+					 * carried in sent_vals
+					 * (QOS_LEVEL_MODIFY is applied below),
+					 * so check it too.
+					 */
+					if ((!sent_vals || !sent_vals[0]) &&
+					    !(assoc->qos_list &&
+					      list_count(assoc->qos_list))) {
+						DB_DEBUG(DB_ASSOC, mysql_conn->conn,
+							 "Trying to move association to the same parent? Nothing to do.");
+						continue;
+					}
 				}
 			}
 			if (row[MASSOC_PACCT][0]) {
@@ -2821,6 +2837,11 @@ static int _add_assoc_cond_user(void *x, void *arg)
 	uid_t pw_uid;
 	int rc = SLURM_SUCCESS;
 	bool set_def = false;
+	bool need_default = !add_assoc_cond->add_assoc->default_acct &&
+			    !add_assoc_cond->add_assoc->assoc.is_def &&
+			    !add_assoc_cond->added_defaults;
+	bool preserve_case =
+		slurmdbd_conf->persist_conn_rc_flags & PERSIST_FLAG_P_USER_CASE;
 
 	add_assoc_cond->add_assoc->assoc.user = x;
 	if (uid_from_string(add_assoc_cond->add_assoc->assoc.user, &pw_uid) !=
@@ -2831,13 +2852,13 @@ static int _add_assoc_cond_user(void *x, void *arg)
 
 	xassert(add_assoc_cond->base_lineage);
 
-	if (!add_assoc_cond->add_assoc->default_acct &&
-	    !add_assoc_cond->add_assoc->assoc.is_def &&
-	    !add_assoc_cond->added_defaults) {
+	if (need_default || preserve_case) {
 		slurmdb_user_rec_t check_object;
 		/*
-		 * Check to see if it is already in the assoc_mgr. If it isn't
-		 * use this first account as the default.
+		 * Look the user up in the assoc_mgr. If a default account is
+		 * needed and the user isn't found, use this first account as
+		 * the default. If PreserveCaseUser is set and the user exists
+		 * with a differing case, reuse the existing (original) case.
 		 */
 		memset(&check_object, 0, sizeof(check_object));
 		check_object.name = add_assoc_cond->add_assoc->assoc.user;
@@ -2852,7 +2873,18 @@ static int _add_assoc_cond_user(void *x, void *arg)
 					    &check_object,
 					    ACCOUNTING_ENFORCE_ASSOCS,
 					    NULL, true);
-		if (rc != SLURM_SUCCESS) {
+		if ((rc == SLURM_SUCCESS) && preserve_case &&
+		    xstrcmp(add_assoc_cond->add_assoc->assoc.user,
+			    check_object.name)) {
+			/*
+			 * We were given a user whose case does not match the
+			 * existing one so operate on the existing user (with
+			 * original case) to avoid adding an assoc with a
+			 * differing user case.
+			 */
+			char *user = add_assoc_cond->add_assoc->assoc.user;
+			strlcpy(user, check_object.name, strlen(user) + 1);
+		} else if ((rc != SLURM_SUCCESS) && need_default) {
 			add_assoc_cond->add_assoc->assoc.is_def = 1;
 			set_def = true;
 			DB_DEBUG(DB_ASSOC, add_assoc_cond->mysql_conn->conn,
@@ -2950,9 +2982,9 @@ static int _add_assoc_cond_acct(void *x, void *arg)
 		add_assoc_cond->add_assoc->assoc.parent_id = acct_assoc.id;
 		add_assoc_cond->base_lineage = acct_assoc.lineage;
 
-		(void) list_for_each_ro(add_assoc_cond->add_assoc->user_list,
-					_add_assoc_cond_user,
-					add_assoc_cond);
+		/* list element data may change so don't use ro list fn */
+		(void) list_for_each(add_assoc_cond->add_assoc->user_list,
+				     _add_assoc_cond_user, add_assoc_cond);
 		add_assoc_cond->added_defaults = true;
 		goto end_it;
 	}

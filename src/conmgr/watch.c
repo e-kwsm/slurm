@@ -50,6 +50,7 @@
 #include "src/common/macros.h"
 #include "src/common/net.h"
 #include "src/common/read_config.h"
+#include "src/common/run_in_daemon.h"
 #include "src/common/slurm_time.h"
 #include "src/common/timers.h"
 #include "src/common/workerpool.h"
@@ -717,7 +718,8 @@ static int _handle_listener(conmgr_fd_t *con, handle_connection_args_t *args)
 		con_unset_flag(con, FLAG_CAN_READ);
 
 		if (mgr_is_accept_deferred()) {
-			warning("%s: [%s] Deferring incoming connection due to %d/%d connections",
+			warning_in_daemon(
+				"%s: [%s] Deferring incoming connection due to %d/%d connections",
 				__func__, con->name,
 				list_count(mgr.connections),
 				mgr.max_connections);
@@ -734,7 +736,8 @@ static int _handle_listener(conmgr_fd_t *con, handle_connection_args_t *args)
 
 		/* must wait until poll allows read from this socket */
 		if (mgr_is_accept_deferred()) {
-			warning("%s: [%s] Deferring polling for new connections due to %d/%d connections",
+			warning_in_daemon(
+				"%s: [%s] Deferring polling for new connections due to %d/%d connections",
 				__func__, con->name,
 				list_count(mgr.connections),
 				mgr.max_connections);
@@ -1138,12 +1141,17 @@ static int _handle_connection(conmgr_fd_t *con, handle_connection_args_t *args)
 		return 0;
 	}
 
-	/* handle already read data */
+	/*
+	 * Handle already read data.
+	 *
+	 * con->in may hold raw TLS records if an EOF flag was set before
+	 * tls_create() moved them to con->tls_in. Never pass those to
+	 * on_data().
+	 */
 	if (get_buf_offset(con->in) && !con_flag(con, FLAG_ON_DATA_TRIED) &&
+	    (!is_tls || con_flag(con, FLAG_IS_TLS_CONNECTED)) &&
 	    !con_flag(con, FLAG_IS_TLS_SHUTTING_DOWN) &&
 	    !con_flag(con, FLAG_INITIATE_TLS_SHUTDOWN)) {
-		xassert(!is_tls || con_flag(con, FLAG_IS_TLS_CONNECTED));
-
 		if (con_flag(con, FLAG_TLS_FINGERPRINT)) {
 			log_flag(CONMGR, "%s: [%s] checking for fingerprint in %u bytes",
 				 __func__, con->name, get_buf_offset(con->in));
@@ -1198,9 +1206,27 @@ static int _handle_connection(conmgr_fd_t *con, handle_connection_args_t *args)
 		 * Peer EOF while on_data stalled on a partial message means
 		 * a truncated frame — record it as an error so on_finish()
 		 * sees why the connection closed.
+		 *
+		 * A TLS connection that never negotiated is only an error if
+		 * the handshake was actually in flight: con->tls exists once
+		 * TLS state has been created, and either buffer holds bytes
+		 * the peer sent but we never got to use. tls_g_recv() drains
+		 * con->tls_in as it consumes records, so con->tls is the only
+		 * evidence left of a handshake that stalled part way. A peer
+		 * that connects and closes without exchanging anything is a
+		 * clean close.
 		 */
-		if (con_flag(con, FLAG_ON_DATA_TRIED) ||
-		    (con->in && get_buf_offset(con->in))) {
+		if (is_tls && !con_flag(con, FLAG_IS_TLS_CONNECTED) &&
+		    (con->tls || (con->in && get_buf_offset(con->in)) ||
+		     (con->tls_in && get_buf_offset(con->tls_in)))) {
+			log_flag(CONMGR, "%s: [%s] peer closed before TLS negotiation completed with %u encrypted and %u unparsed bytes",
+				 __func__, con->name,
+				 (con->tls_in ? get_buf_offset(con->tls_in) : 0),
+				 (con->in ? get_buf_offset(con->in) : 0));
+			con_set_status_code(con,
+					    ESLURM_PROTOCOL_INCOMPLETE_PACKET);
+		} else if (con_flag(con, FLAG_ON_DATA_TRIED) ||
+			   (con->in && get_buf_offset(con->in))) {
 			log_flag(CONMGR, "%s: [%s] peer closed with %u bytes of unparsed input; marking incomplete",
 				 __func__, con->name,
 				 (con->in ? get_buf_offset(con->in) : 0));
@@ -1328,9 +1354,10 @@ static bool _attempt_accept(conmgr_fd_t *con)
 			 __func__, con->name);
 		return false;
 	} else if (mgr_is_accept_deferred()) {
-		warning("%s: [%s] Deferring to attempt to accept new incoming connection due to %d/%d connections",
-			 __func__, con->name, list_count(mgr.connections),
-			 mgr.max_connections);
+		warning_in_daemon(
+			"%s: [%s] Deferring to attempt to accept new incoming connection due to %d/%d connections",
+			__func__, con->name, list_count(mgr.connections),
+			mgr.max_connections);
 		slurm_mutex_unlock(&mgr.mutex);
 		return false;
 	} else

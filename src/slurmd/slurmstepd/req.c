@@ -70,6 +70,7 @@
 #include "src/interfaces/acct_gather.h"
 #include "src/interfaces/auth.h"
 #include "src/interfaces/cgroup.h"
+#include "src/interfaces/hash.h"
 #include "src/interfaces/jobacct_gather.h"
 #include "src/interfaces/namespace.h"
 #include "src/interfaces/proctrack.h"
@@ -91,6 +92,13 @@
 #include "src/stepmgr/stepmgr.h"
 
 #define MAX_SUBSCRIBERS 64
+
+/*
+ * Upper bound on the string lengths accepted on the step socket. Every sender
+ * derives these from strlen() of a name or a short message, so this is far
+ * more than any legitimate request needs.
+ */
+#define MAX_STEPD_REQ_STR_LEN (64 * 1024)
 
 static void *_handle_accept(void *arg);
 static int _handle_request(int fd, uid_t uid, pid_t remote_pid);
@@ -1056,6 +1064,11 @@ static int _handle_signal_container(int fd, uid_t uid, pid_t remote_pid)
 	safe_read(fd, &sig, sizeof(int));
 	safe_read(fd, &flag, sizeof(int));
 	safe_read(fd, &details_len, sizeof(int));
+	if ((details_len < 0) || (details_len > MAX_STEPD_REQ_STR_LEN)) {
+		error("%s: rejecting invalid details length %d",
+		      __func__, details_len);
+		goto rwfail;
+	}
 	if (details_len)
 		details = xmalloc(details_len + 1);
 	safe_read(fd, details, details_len);
@@ -1249,6 +1262,10 @@ static int _handle_notify_job(int fd, uid_t uid, pid_t remote_pid)
 	debug3("_handle_notify_job for %ps", &step->step_id);
 
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_STEPD_REQ_STR_LEN)) {
+		error("%s: rejecting invalid message length %d", __func__, len);
+		goto rwfail;
+	}
 	if (len) {
 		message = xmalloc(len + 1);
 		safe_read(fd, message, len);
@@ -1350,6 +1367,11 @@ static int _handle_attach(int fd, uid_t uid, pid_t remote_pid)
 	srun       = xmalloc(sizeof(srun_info_t));
 
 	safe_read(fd, &cert_len, sizeof(uint32_t));
+	if (cert_len > MAX_STEPD_REQ_STR_LEN) {
+		error("%s: rejecting invalid cert length %u",
+		      __func__, cert_len);
+		goto rwfail;
+	}
 	if (cert_len) {
 		srun->tls_cert = xmalloc(cert_len);
 		safe_read(fd, srun->tls_cert, cert_len);
@@ -1357,14 +1379,18 @@ static int _handle_attach(int fd, uid_t uid, pid_t remote_pid)
 	safe_read(fd, &srun->ioaddr, sizeof(slurm_addr_t));
 	safe_read(fd, &srun->resp_addr, sizeof(slurm_addr_t));
 	safe_read(fd, &key_len, sizeof(uint32_t));
-	srun->key = xmalloc(key_len);
+	if (key_len > MAX_STEPD_REQ_STR_LEN) {
+		error("%s: rejecting invalid key length %u", __func__, key_len);
+		goto rwfail;
+	}
+	srun->key = xmalloc(key_len + 1);
 	safe_read(fd, srun->key, key_len);
+	srun->key[key_len] = '\0';
+	srun->key_hash = hash_g_compute_hex(srun->key);
 	safe_read(fd, &srun->uid, sizeof(uid_t));
 	safe_read(fd, &srun->protocol_version, sizeof(uint16_t));
 
-	if (!srun->protocol_version)
-		srun->protocol_version = NO_VAL16;
-
+	xassert(srun->protocol_version);
 	srun->attached = true;
 
 	/*
@@ -1422,6 +1448,7 @@ done:
 	}
 	if (srun) {
 		xfree(srun->key);
+		xfree(srun->key_hash);
 		xfree(srun->tls_cert);
 		xfree(srun);
 	}
@@ -1430,6 +1457,7 @@ done:
 rwfail:
 	if (srun) {
 		xfree(srun->key);
+		xfree(srun->key_hash);
 		xfree(srun->tls_cert);
 		xfree(srun);
 	}
@@ -1828,6 +1856,10 @@ static int _handle_getpw(int fd, uid_t socket_uid, pid_t remote_pid)
 	safe_read(fd, &mode, sizeof(int));
 	safe_read(fd, &uid, sizeof(uid_t));
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_STEPD_REQ_STR_LEN)) {
+		error("%s: rejecting invalid name length %d", __func__, len);
+		goto rwfail;
+	}
 	if (len) {
 		name = xmalloc(len + 1); /* add room for NUL */
 		safe_read(fd, name, len);
@@ -1932,6 +1964,10 @@ static int _handle_getgr(int fd, uid_t uid, pid_t remote_pid)
 	safe_read(fd, &mode, sizeof(int));
 	safe_read(fd, &gid, sizeof(gid_t));
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_STEPD_REQ_STR_LEN)) {
+		error("%s: rejecting invalid name length %d", __func__, len);
+		goto rwfail;
+	}
 	if (len) {
 		name = xmalloc(len + 1); /* add room for NUL */
 		safe_read(fd, name, len);
@@ -1994,13 +2030,18 @@ static int _handle_gethost(int fd, uid_t uid, pid_t remote_pid)
 	char *hostname = NULL;
 	bool pid_match;
 	int found = 0;
-	unsigned char address[sizeof(struct in6_addr)];
+	char address[INET6_ADDRSTRLEN];
 	char *address_str = NULL;
 	int af = AF_UNSPEC;
 	slurm_addr_t addr;
 
 	safe_read(fd, &mode, sizeof(int));
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_STEPD_REQ_STR_LEN)) {
+		error("%s: rejecting invalid nodename length %d",
+		      __func__, len);
+		goto rwfail;
+	}
 	if (len) {
 		nodename = xmalloc(len + 1); /* add room for NULL */
 		safe_read(fd, nodename, len);
@@ -2025,8 +2066,8 @@ static int _handle_gethost(int fd, uid_t uid, pid_t remote_pid)
 		nodename_r = xstrdup(nodename);
 		hostname = xstrdup(nodename);
 
-		slurm_get_ip_str(&addr, (char *)address, INET6_ADDRSTRLEN);
-		tmp_str = xstrdup((char *)address);
+		slurm_get_ip_str(&addr, address, sizeof(address));
+		tmp_str = xstrdup(address);
 		inet_pton(af, tmp_str, &address);
 		xfree(tmp_str);
 	} else if (nodename &&
@@ -2090,6 +2131,7 @@ static int _handle_gethost(int fd, uid_t uid, pid_t remote_pid)
 
 rwfail:
 	xfree(hostname);
+	xfree(nodename);
 	xfree(nodename_r);
 	return SLURM_ERROR;
 }
@@ -2267,6 +2309,10 @@ static int _handle_completion(int fd, uid_t uid, pid_t remote_pid)
 	 * slurmd and slurmstepd
 	 */
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_MSG_SIZE)) {
+		error("%s: rejecting invalid jobacct length %d", __func__, len);
+		goto rwfail;
+	}
 	buf = xmalloc(len);
 	safe_read(fd, buf, len);
 	buffer = create_buf(buf, len);
@@ -2534,6 +2580,10 @@ static int _handle_reconfig(int fd, uid_t uid, pid_t remote_pid)
 	 * len = 0 indicates we're just going for a log rotate.
 	 */
 	safe_read(fd, &len, sizeof(int));
+	if ((len < 0) || (len > MAX_MSG_SIZE)) {
+		error("%s: rejecting invalid config length %d", __func__, len);
+		goto rwfail;
+	}
 	if (len) {
 		buffer = init_buf(len);
 		safe_read(fd, buffer->head, len);

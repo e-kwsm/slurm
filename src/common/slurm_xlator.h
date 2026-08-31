@@ -401,35 +401,46 @@
 #define	xsignal_sigset_create	slurm_xsignal_sigset_create
 
 /* xstring.[ch] functions */
-#define	_xstrcat		slurm_xstrcat
-#define	_xstrcatat		slurm_xstrcatat
-#define	_xstrncat		slurm_xstrncat
-#define	_xstrcatchar		slurm_xstrcatchar
-#define	_xstrftimecat		slurm_xstrftimecat
-#define	_xiso8601timecat	slurm_xiso8601timecat
-#define	_xrfc5424timecat	slurm_xrfc5424timecat
-#define	_xstrfmtcat		slurm_xstrfmtcat
-#define	_xstrfmtcatat		slurm_xstrfmtcatat
-#define	_xmemcat		slurm_xmemcat
-#define	xstrdup			slurm_xstrdup
-#define	xstrdup_printf		slurm_xstrdup_printf
-#define _xstrdup_vprintf	slurm_xstrdup_vprintf
-#define	xstrndup		slurm_xstrndup
-#define	xbasename		slurm_xbasename
-#define	xdirname		slurm_xdirname
-#define	_xstrsubstitute		slurm_xstrsubstitute
-#define	xshort_hostname		slurm_xshort_hostname
-#define xstring_is_whitespace   slurm_xstring_is_whitespace
-#define	xstrtolower		slurm_xstrtolower
-#define xstrchr			slurm_xstrchr
-#define xstrrchr		slurm_xstrrchr
-#define xstrcmp			slurm_xstrcmp
-#define xstrncmp		slurm_xstrncmp
-#define xstrcasecmp		slurm_xstrcasecmp
-#define xstrncasecmp		slurm_xstrncasecmp
-#define	xstrstr			slurm_xstrstr
-#define xstrcasestr		slurm_xstrcasestr
-#define xbase64_from_base64url	slurm_xbase64_from_base64url
+#define _xstrcat slurm_xstrcat
+#define _xstrcatat slurm_xstrcatat
+#define _xstrncat slurm_xstrncat
+#define _xstrcatchar slurm_xstrcatchar
+#define _xstrftimecat slurm_xstrftimecat
+#define _xiso8601timecat slurm_xiso8601timecat
+#define _xrfc5424timecat slurm_xrfc5424timecat
+#define _xstrfmtcat slurm_xstrfmtcat
+#define _xstrfmtcatat slurm_xstrfmtcatat
+#define _xmemcat slurm_xmemcat
+#define xstrdup slurm_xstrdup
+#define try_xstrndup slurm_try_xstrndup
+#define xstrdup_printf slurm_xstrdup_printf
+#define _xstrdup_vprintf slurm_xstrdup_vprintf
+#define xstrndup slurm_xstrndup
+#define xbasename slurm_xbasename
+#define xdirname slurm_xdirname
+#define _xstrsubstitute slurm_xstrsubstitute
+#define xshort_hostname slurm_xshort_hostname
+#define xstring_is_whitespace slurm_xstring_is_whitespace
+#define xstrtolower slurm_xstrtolower
+#define xstrchr slurm_xstrchr
+#define xstrrchr slurm_xstrrchr
+#define xstrcmp slurm_xstrcmp
+#define xstrncmp slurm_xstrncmp
+#define xstrcasecmp slurm_xstrcasecmp
+#define xstrncasecmp slurm_xstrncasecmp
+#define xstrstr slurm_xstrstr
+#define xstrcasestr slurm_xstrcasestr
+#define xbase64_from_base64url slurm_xbase64_from_base64url
+
+/* xutf.[ch] functions */
+#define utf_encoding_scheme_to_string slurm_utf_encoding_scheme_to_string
+#define utf8_strlen slurm_utf8_strlen
+#define utf8_ndup slurm_utf8_ndup
+#define utf8_dup slurm_utf8_dup
+#define utf_read_encoding_schema slurm_utf_read_encoding_schema
+#define utf8_get_loggable slurm_utf8_get_loggable
+#define utf16_to_coding slurm_utf16_to_coding
+#define utf16_from_coding slurm_utf16_from_coding
 
 /* slurm_protocol_api.[ch] functions */
 #define convert_num_unit2       slurm_convert_num_unit2

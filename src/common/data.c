@@ -33,10 +33,14 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 \*****************************************************************************/
 
-#define _ISOC99_SOURCE	/* needed for lrint */
+#define _ISOC99_SOURCE /* needed for llrint */
 
 #include <ctype.h>
+#include <errno.h>
 #include <math.h>
+#include <stdlib.h>
+
+#include "slurm/slurm.h"
 
 #include "src/common/data.h"
 #include "src/common/http.h"
@@ -517,6 +521,7 @@ extern data_t *data_set_float(data_t *data, double value)
 	if (!data)
 		return NULL;
 
+	_release(data);
 	data->type = TYPE_FLOAT;
 	data->data.float_u = value;
 
@@ -1685,8 +1690,8 @@ static int _convert_data_int(data_t *data, bool force)
 	case TYPE_STRING_INLINE:
 	case TYPE_STRING_PTR:
 	{
-		int64_t x;
-		char end;
+		int64_t x = -1;
+		char *end_ptr = NULL;
 		const char *str = data_get_string(data);
 
 		if (!str[0]) {
@@ -1697,22 +1702,41 @@ static int _convert_data_int(data_t *data, bool force)
 		}
 
 		if ((str[0] == '0') && (tolower(str[1]) == 'x')) {
-			if (sscanf(str, "%"SCNx64"%c", &x, &end) == 1) {
+			uint64_t u = INFINITE64;
+
+			errno = 0;
+			u = strtoull(str, &end_ptr, 16);
+
+			if (errno) {
 				log_flag_hex(DATA, str, strlen(str),
-					     "%s: converted hex number %pD->%"PRId64,
-					 __func__, data, x);
-				data_set_int(data, x);
-				return SLURM_SUCCESS;
+					     "%s: conversion of hex string %pD to integer failed: %m",
+					     __func__, data);
+				return errno;
 			}
 
+			if ((end_ptr == str) || end_ptr[0]) {
+				log_flag_hex(DATA, str, strlen(str),
+					     "%s: conversion of hex string %pD to integer did not parse entire string",
+					     __func__, data);
+				return ESLURM_DATA_CONV_FAILED;
+			}
+
+			x = (int64_t) u;
 			log_flag_hex(DATA, str, strlen(str),
-				     "%s: conversion of hex string %pD to integer failed",
-				     __func__, data);
-			return ESLURM_DATA_CONV_FAILED;
+				     "%s: converted hex number %pD->%"PRId64,
+				     __func__, data, x);
+			data_set_int(data, x);
+			return SLURM_SUCCESS;
 		}
 
 		if (!force) {
-			for (const char *p = str; *p; p++) {
+			const char *p = str;
+
+			/* Allow explicitly positive and negative integers */
+			if ((p[0] == '-') || (p[0] == '+'))
+				p++;
+
+			for (; *p; p++) {
 				if ((*p < '0') || (*p > '9')) {
 					log_flag_hex(DATA, str, strlen(str),
 						     "%s: rejecting non-numeric conversion of %pD to integer failed",
@@ -1722,22 +1746,40 @@ static int _convert_data_int(data_t *data, bool force)
 			}
 		}
 
-		if (sscanf(str, "%"SCNd64"%c", &x, &end) == 1) {
-			log_flag_hex(DATA, str, strlen(str),
-				     "%s: converted %pD->%"PRId64,
-				     __func__, data, x);
-			data_set_int(data, x);
-			return SLURM_SUCCESS;
-		} else {
+		errno = 0;
+		x = strtoll(str, &end_ptr, 10);
+
+		if (errno || (end_ptr == str) || end_ptr[0]) {
 			log_flag_hex(DATA, str, strlen(str),
 				     "%s: conversion of %pD to integer failed",
 				     __func__, data);
 			return ESLURM_DATA_CONV_FAILED;
 		}
+
+		log_flag_hex(DATA, str, strlen(str),
+			     "%s: converted %pD->%"PRId64,
+			     __func__, data, x);
+		data_set_int(data, x);
+		return SLURM_SUCCESS;
 	}
 	case TYPE_FLOAT:
 		if (force) {
-			data_set_int(data, lrint(data_get_float(data)));
+			const double f = data_get_float(data);
+
+			/*
+			 * llrint() is undefined for a value outside of the
+			 * range of its return type and returns INT64_MIN on
+			 * glibc. Refuse the conversion instead of storing a
+			 * different number than was given.
+			 */
+			if (!isfinite(f) || isless(f, (double) INT64_MIN) ||
+			    isgreater(f, nextafter((double) INT64_MAX, 0.0))) {
+				log_flag(DATA, "%s: conversion of %pD to integer failed",
+					 __func__, data);
+				return ESLURM_DATA_CONV_FAILED;
+			}
+
+			(void) data_set_int(data, llrint(f));
 			return SLURM_SUCCESS;
 		}
 		return ESLURM_DATA_CONV_FAILED;
@@ -1821,8 +1863,8 @@ static int _convert_data_float_from_string(data_t *data)
 	goto fail;
 
 converted:
-	log_flag(DATA, "%s: converted %pD to float: %s->%lf",
-		 __func__, data, str, data_get_float(data));
+	log_flag(DATA, "%s: converted %pD to float: %lf",
+		 __func__, data, data_get_float(data));
 	return SLURM_SUCCESS;
 
 fail:
@@ -2174,27 +2216,28 @@ extern bool data_check_match(const data_t *a, const data_t *b, bool mask)
 			 data_get_int(b));
 		return rc;
 	case TYPE_FLOAT:
-		if (!(rc = (data_get_float(a) == data_get_float(b))) ||
-		    !(rc = fuzzy_equal(data_get_float(a), data_get_float(b)))) {
-			if (isnan(data_get_float(a)) ==
-			    isnan(data_get_float(a)))
-				rc = true;
-			else if (signbit(data_get_float(a)) !=
-				 signbit(data_get_float(b)))
-				rc = false;
-			else if (isinf(data_get_float(a)) !=
-				 isinf(data_get_float(b)))
-				rc = false;
-			else
-				rc = false;
-		}
+	{
+		const double x = data_get_float(a), y = data_get_float(b);
+
+		/*
+		 * NaN never compares equal to itself, so it has to be matched
+		 * explicitly. Infinities only match when they share a sign.
+		 * Everything else matches exactly or within tolerance.
+		 */
+		if (isnan(x) || isnan(y))
+			rc = (isnan(x) && isnan(y));
+		else if (isinf(x) || isinf(y))
+			rc = (isinf(x) && isinf(y) &&
+			      (signbit(x) == signbit(y)));
+		else
+			rc = ((x == y) || fuzzy_equal(x, y));
 
 		log_flag(DATA, "compare: %s(0x%"PRIXPTR")=%e %s %s(0x%"PRIXPTR")=%e",
-			 _type_to_string(a->type), (uintptr_t) a,
-			 data_get_float(a), (rc ? "=" : "!="),
-			 _type_to_string(b->type), (uintptr_t) b,
-			 data_get_float(b));
+			 _type_to_string(a->type), (uintptr_t) a, x,
+			 (rc ? "=" : "!="),
+			 _type_to_string(b->type), (uintptr_t) b, y);
 		return rc;
+	}
 	case TYPE_DICT:
 		rc = _data_match_dict(a, b, mask);
 		log_flag(DATA, "compare dictionary: %s(0x%"PRIXPTR")[%zd] %s %s(0x%"PRIXPTR")[%zd]",
@@ -2416,16 +2459,20 @@ extern data_t *data_copy(data_t *dest, const data_t *src)
 
 extern data_t *data_move(data_t *dest, data_t *src)
 {
-	if (!src)
-		return NULL;
-
-	if (!dest)
-		dest = data_new();
-
+	xassert(src);
+	xassert(dest != src);
 	_check_magic(src);
-	_check_magic(dest);
 
-	log_flag(DATA, "%s: move data %pD to %pD", __func__, src, dest);
+	if (!dest) {
+		dest = data_new();
+		log_flag(DATA, "%s: move data %pD to new %pD",
+			 __func__, src, dest);
+	} else {
+		_check_magic(dest);
+		log_flag(DATA, "%s: move data %pD to existing %pD",
+			 __func__, src, dest);
+		_release(dest);
+	}
 
 	memmove(&dest->data, &src->data, sizeof(src->data));
 	dest->type = src->type;

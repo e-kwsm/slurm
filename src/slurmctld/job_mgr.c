@@ -949,8 +949,7 @@ static slurmdb_qos_rec_t *_determine_and_validate_qos(
 
 static list_t *_get_qos_ptr_list(char *qos_req, char *resv_name,
 				 slurmdb_assoc_rec_t *assoc_ptr,
-				 bool privileged, int *error_code, bool locked,
-				 log_level_t log_lvl)
+				 bool privileged, int *error_code, bool locked)
 {
 	list_t *qos_ptr_list = NULL;
 	char *token, *last = NULL, *tmp_qos_req;
@@ -970,7 +969,7 @@ static list_t *_get_qos_ptr_list(char *qos_req, char *resv_name,
 			_determine_and_validate_qos(resv_name, assoc_ptr,
 						    privileged, &qos_rec,
 						    error_code, locked,
-						    log_lvl);
+						    LOG_LEVEL_ERROR);
 
 		if (*error_code != SLURM_SUCCESS)
 			break;
@@ -1012,10 +1011,15 @@ static list_t *_get_qos_ptr_list(char *qos_req, char *resv_name,
 	return qos_ptr_list;
 }
 
+/*
+ * For multi-QOS requests, qos_id == 0 means select the first QOS from the
+ * priority-sorted request list. A nonzero qos_id means the caller already has
+ * a selected QOS to preserve, such as when reloading an existing job.
+ */
 static int _get_qos_info(char *qos_req, uint32_t qos_id, list_t **qos_plist,
 			 slurmdb_qos_rec_t **qos_pptr, char *resv_name,
 			 slurmdb_assoc_rec_t *assoc_ptr, bool privileged,
-			 bool locked, log_level_t log_lvl)
+			 bool locked)
 {
 	int rc = SLURM_SUCCESS;
 
@@ -1024,7 +1028,7 @@ static int _get_qos_info(char *qos_req, uint32_t qos_id, list_t **qos_plist,
 	xassert(!*qos_plist);
 
 	*qos_plist = _get_qos_ptr_list(qos_req, resv_name, assoc_ptr,
-				       privileged, &rc, locked, log_lvl);
+				       privileged, &rc, locked);
 
 	if (!*qos_plist) {
 		slurmdb_qos_rec_t qos_rec = {
@@ -1032,13 +1036,25 @@ static int _get_qos_info(char *qos_req, uint32_t qos_id, list_t **qos_plist,
 			.id = qos_id,
 		};
 
-		*qos_pptr = _determine_and_validate_qos(resv_name, assoc_ptr,
-							privileged, &qos_rec,
-							&rc, locked, log_lvl);
-	} else {
-		*qos_pptr = list_peek(*qos_plist);
+		*qos_pptr =
+			_determine_and_validate_qos(resv_name, assoc_ptr,
+						    privileged, &qos_rec, &rc,
+						    locked, LOG_LEVEL_ERROR);
+		return rc;
 	}
 
+	if (qos_id) {
+		*qos_pptr =
+			list_find_first_ro(*qos_plist, slurmdb_find_qos_in_list,
+					   &qos_id);
+		if (*qos_pptr)
+			return rc;
+
+		info("%s: qos %u is not part of qos_req '%s', using the highest priority one",
+		     __func__, qos_id, qos_req);
+	}
+
+	*qos_pptr = list_peek(*qos_plist);
 	return rc;
 }
 /*
@@ -1547,7 +1563,7 @@ extern int job_mgr_load_job_state(buf_t *buffer,
 	}
 
 	get_part_list(job_ptr->partition, &job_ptr->part_ptr_list,
-		      &job_ptr->part_ptr, &err_part, NULL);
+		      &job_ptr->part_ptr, &err_part);
 	if (err_part) {
 		verbose("Invalid partition (%s) for JobId=%u",
 			err_part, job_ptr->job_id);
@@ -1555,6 +1571,18 @@ extern int job_mgr_load_job_state(buf_t *buffer,
 		/* not fatal error, partition could have been
 		 * removed, _sync_jobs_to_conf() will clean-up
 		 * this job */
+	}
+
+	/*
+	 * A non-pending job must keep the partition it was allocated in.
+	 * get_part_list() set part_ptr to one of the job's partitions, which
+	 * need not be the allocated one, so recover it from alloc_partition.
+	 * _sync_jobs_to_conf() cleans up the job if that partition is gone.
+	 */
+	if (!IS_JOB_PENDING(job_ptr)) {
+		part_record_t *part_ptr = find_alloc_part_record(job_ptr, NULL);
+		if (part_ptr)
+			job_ptr->part_ptr = part_ptr;
 	}
 
 #if 0
@@ -1660,14 +1688,12 @@ extern int job_mgr_load_job_state(buf_t *buffer,
 
 	if (!job_finished && (job_ptr->qos_id || job_ptr->details->qos_req) &&
 	    (job_ptr->state_reason != FAIL_ACCOUNT)) {
-		int qos_error = _get_qos_info(job_ptr->details->qos_req,
-					      job_ptr->qos_id,
-					      &job_ptr->qos_list,
-					      &job_ptr->qos_ptr,
-					      job_ptr->resv_name,
-					      job_ptr->assoc_ptr,
-					      job_ptr->limit_set.qos,
-					      true, LOG_LEVEL_ERROR);
+		int qos_error =
+			_get_qos_info(job_ptr->details->qos_req,
+				      job_ptr->qos_id, &job_ptr->qos_list,
+				      &job_ptr->qos_ptr, job_ptr->resv_name,
+				      job_ptr->assoc_ptr,
+				      job_ptr->limit_set.qos, true);
 
 		if ((qos_error != SLURM_SUCCESS) &&
 		    !job_ptr->limit_set.qos) {
@@ -2800,9 +2826,18 @@ static int _foreach_kill_job_by_part_name(void *x, void *arg)
 			      __func__);
 		} else if (rebuild_name_list) {
 			if (list_count(job_ptr->part_ptr_list) > 0) {
+				/*
+				 * rebuild_job_part_list() repoints part_ptr to
+				 * the list head for a pending job, else keeps the
+				 * allocated one. The deleted partition is always a
+				 * secondary one (partition_in_use() blocks
+				 * deleting the allocated one), so a running or
+				 * suspended job is not killed. A completing job
+				 * whose allocated partition was the one deleted
+				 * falls through to the NULL part_ptr assignment
+				 * below.
+				 */
 				rebuild_job_part_list(job_ptr);
-				job_ptr->part_ptr =
-					list_peek(job_ptr->part_ptr_list);
 			} else {
 				FREE_NULL_LIST(job_ptr->part_ptr_list);
 			}
@@ -3509,6 +3544,8 @@ extern job_record_t *job_array_split(job_record_t *job_ptr, bool list_add)
 	job_ptr_pend->admin_comment = xstrdup(job_ptr->admin_comment);
 	job_ptr_pend->alias_list = NULL;
 	job_ptr_pend->alloc_node = xstrdup(job_ptr->alloc_node);
+	/* The split-off record is pending, so it has no allocated partition. */
+	job_ptr_pend->alloc_partition = NULL;
 	job_ptr_pend->node_addrs = NULL;
 
 	job_ptr_pend->array_recs = job_ptr->array_recs;
@@ -6627,7 +6664,7 @@ static int _get_job_parts(job_desc_msg_t *job_desc, part_record_t **part_pptr,
 	if (job_desc->partition) {
 		char *err_part = NULL;
 		get_part_list(job_desc->partition, &part_ptr_list, &part_ptr,
-			      &err_part, NULL);
+			      &err_part);
 		if (err_part) {
 			info("%s: invalid partition specified: %s",
 			     __func__, job_desc->partition);
@@ -7405,12 +7442,9 @@ static int _job_create(job_desc_msg_t *job_desc, bool allocate, int will_run,
 		job_desc->account = xstrdup(assoc_rec.acct);
 
 	/* This must be done after we have the assoc_ptr set */
-	error_code = _get_qos_info(job_desc->qos, 0,
-				   &qos_ptr_list,
-				   &qos_ptr,
-				   job_desc->reservation,
-				   assoc_ptr,
-				   false, true, LOG_LEVEL_ERROR);
+	error_code =
+		_get_qos_info(job_desc->qos, 0, &qos_ptr_list, &qos_ptr,
+			      job_desc->reservation, assoc_ptr, false, true);
 	if (error_code != SLURM_SUCCESS) {
 		assoc_mgr_unlock(&assoc_mgr_read_lock);
 		goto cleanup_fail;
@@ -7600,6 +7634,14 @@ static int _job_create(job_desc_msg_t *job_desc, bool allocate, int will_run,
 	job_ptr->qos_list = qos_ptr_list;
 	job_ptr->bit_flags |= JOB_DEPENDENT;
 	job_ptr->last_sched_eval = time(NULL);
+
+	/*
+	 * Build a multi-partition job's partition string from the
+	 * PriorityTier-sorted part_ptr_list so it is reported in tier order,
+	 * not submission order.
+	 */
+	if (job_ptr->part_ptr_list)
+		rebuild_job_part_list(job_ptr);
 
 	part_ptr_list = NULL;
 	qos_ptr_list = NULL;
@@ -8654,8 +8696,8 @@ static int _copy_job_desc_to_job_record(job_desc_msg_t *job_desc,
 				   ACCOUNTING_ENFORCE_WCKEYS))
 				job_desc->wckey = xstrdup("*");
 			else {
-				error("Job didn't specify wckey and user "
-				      "%d has no default.", job_desc->user_id);
+				error("Job didn't specify wckey and user %u has no default.",
+				      job_desc->user_id);
 				return ESLURM_INVALID_WCKEY;
 			}
 		} else if (job_desc->wckey) {
@@ -9431,6 +9473,8 @@ void job_time_limit(void)
 			job_config_fini(job_ptr);
 			if (job_ptr->batch_flag)
 				launch_job(job_ptr);
+			else if (job_ptr->het_job_id)
+				launch_het_job_leader(job_ptr);
 		}
 
 		/*
@@ -12534,6 +12578,9 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 	if (error_code != SLURM_SUCCESS)
 		goto fini;
 
+	/* If in backfill yield and this is the current job, show it updated */
+	job_ptr->bit_flags &= ~BF_CURRENT_JOB_NOT_UPDATED;
+
 	if (job_desc->array_inx && job_ptr->array_recs) {
 		int throttle;
 		throttle = strtoll(job_desc->array_inx, (char **) NULL, 10);
@@ -12755,8 +12802,7 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 		error_code =
 			_get_qos_info((job_desc->qos[0] ? job_desc->qos : NULL),
 				      0, &new_qos_list, &new_qos_ptr, resv_name,
-				      use_assoc_ptr, privileged, true,
-				      LOG_LEVEL_ERROR);
+				      use_assoc_ptr, privileged, true);
 		if ((error_code == SLURM_SUCCESS) && new_qos_ptr) {
 			if (!new_qos_list &&
 			    (job_ptr->qos_ptr == new_qos_ptr)) {
@@ -13409,6 +13455,7 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 				info("%s: exceeded association/QOS limit for user %u: %s",
 				     __func__, job_desc->user_id,
 				     job_state_reason_string(acct_reason));
+				job_desc->time_limit = orig_time_limit;
 				error_code = ESLURM_ACCOUNTING_POLICY;
 				goto fini;
 			}
@@ -13449,18 +13496,15 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 			}
 
 			assoc_mgr_lock(&assoc_mgr_read_lock);
-			if ((error_code = _valid_job_part(
-				     job_desc, uid,
-				     new_req_bitmap_given ?
-				     new_req_bitmap :
-				     job_ptr->details->req_node_bitmap,
-				     use_part_ptr,
-				     new_part_ptr ?
-				     part_ptr_list : job_ptr->part_ptr_list,
-				     use_assoc_ptr, use_qos_ptr, NULL))) {
-				assoc_mgr_unlock(&assoc_mgr_read_lock);
-				goto fini;
-			}
+			error_code = _valid_job_part(
+				job_desc, uid,
+				new_req_bitmap_given ?
+					new_req_bitmap :
+					job_ptr->details->req_node_bitmap,
+				use_part_ptr,
+				new_part_ptr ? part_ptr_list :
+					       job_ptr->part_ptr_list,
+				use_assoc_ptr, use_qos_ptr, NULL);
 			assoc_mgr_unlock(&assoc_mgr_read_lock);
 
 			if (min_reset)
@@ -13473,6 +13517,9 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 				job_desc->reservation = resv_orig;
 
 			job_desc->time_limit = orig_time_limit;
+
+			if (error_code)
+				goto fini;
 		}
 
 		/*
@@ -13562,6 +13609,7 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 		xfree(job_ptr->details->resv_req);
 		job_ptr->details->resv_req = xstrdup(job_desc->reservation);
 		job_ptr->resv_list = new_resv_list;
+		new_resv_list = NULL;
 		job_ptr->resv_id = new_resv_ptr->resv_id;
 		job_ptr->resv_ptr = new_resv_ptr;
 
@@ -15296,6 +15344,8 @@ static int _update_job(job_record_t *job_ptr, job_desc_msg_t *job_desc,
 fini:
 	FREE_NULL_BITMAP(new_req_bitmap);
 	FREE_NULL_LIST(part_ptr_list);
+	FREE_NULL_LIST(new_qos_list);
+	FREE_NULL_LIST(new_resv_list);
 
 	if ((error_code == SLURM_SUCCESS) && tres_req_cnt_set) {
 		for (tres_pos = 0; tres_pos < slurmctld_tres_cnt; tres_pos++) {
@@ -15822,7 +15872,8 @@ extern void job_post_resize_acctg(job_record_t *job_ptr)
 extern void job_mem_resize_complete(job_record_t *job_ptr)
 {
 	xassert(verify_lock(JOB_LOCK, WRITE_LOCK));
-	xassert(verify_lock(NODE_LOCK, READ_LOCK));
+	xassert(verify_lock(NODE_LOCK, WRITE_LOCK));
+	xassert(verify_lock(PART_LOCK, READ_LOCK));
 
 	job_pre_resize_acctg(job_ptr);
 	select_g_job_mem_reduce(job_ptr);
@@ -16765,6 +16816,8 @@ void batch_requeue_fini(job_record_t *job_ptr)
 	job_ptr->node_cnt = 0;
 	job_ptr->total_nodes = 0;
 	xfree(job_ptr->alias_list);
+	/* The job is now pending again, so it has no allocated partition. */
+	xfree(job_ptr->alloc_partition);
 	xfree(job_ptr->batch_host);
 	free_job_resources(&job_ptr->job_resrcs);
 	FREE_NULL_LIST(job_ptr->license_list);
@@ -17924,17 +17977,23 @@ static int _job_requeue_op(uid_t uid, job_record_t *job_ptr, bool preempt,
 		/*
 		 * We want this job to have the requeued/preempted state in the
 		 * accounting logs. Set a new submit time so the restarted
-		 * job looks like a new job.
+		 * job looks like a new job. Do not rebuild node_bitmap_cg for
+		 * a job that is already completing. A bit_copy(node_bitmap)
+		 * would resurrect nodes whose epilog has already finished
+		 * (and which make_node_idle() has therefore already released)
+		 * without updating node_cnt to match.
 		 */
 		if (preempt) {
 			job_state_set(job_ptr, JOB_PREEMPTED);
-			build_cg_bitmap(job_ptr);
+			if (!is_completing)
+				build_cg_bitmap(job_ptr);
 			if (!is_completed && !is_completing)
 				job_completion_logger(job_ptr, true);
 			job_state_set(job_ptr, JOB_REQUEUE);
 		} else {
 			job_state_set(job_ptr, JOB_REQUEUE);
-			build_cg_bitmap(job_ptr);
+			if (!is_completing)
+				build_cg_bitmap(job_ptr);
 			if (!is_completed && !is_completing)
 				job_completion_logger(job_ptr, true);
 		}
@@ -18006,7 +18065,7 @@ reply:
 	 */
 	acct_policy_add_job_submit(job_ptr, false);
 
-	acct_policy_update_pending_job(job_ptr, true);
+	acct_policy_update_pending_job(job_ptr, false);
 
 	if (flags & JOB_SPECIAL_EXIT) {
 		job_state_set_flag(job_ptr, JOB_SPECIAL_EXIT);
@@ -19901,12 +19960,20 @@ extern uint16_t job_mgr_determine_cpus_per_core(
 static int _sort_part_lists(void *x, void *none)
 {
 	job_record_t *job_ptr = x;
-	if (job_ptr && job_ptr->part_ptr_list)
-		list_sort(job_ptr->part_ptr_list, priority_sort_part_tier);
+
+	if (!job_ptr || !job_ptr->part_ptr_list)
+		return SLURM_SUCCESS;
+
+	list_sort(job_ptr->part_ptr_list, priority_sort_part_tier);
+	/*
+	 * Rebuild the partition string in the new PriorityTier order and
+	 * repoint a pending job's part_ptr to the new list head.
+	 */
+	rebuild_job_part_list(job_ptr);
 	return SLURM_SUCCESS;
 }
 
-extern void sort_all_jobs_partition_lists()
+extern void sort_all_jobs_partition_lists(void)
 {
 	list_for_each(job_list, _sort_part_lists, NULL);
 }

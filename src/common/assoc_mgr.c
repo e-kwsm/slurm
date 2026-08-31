@@ -3158,7 +3158,10 @@ extern int assoc_mgr_fill_in_user(void *db_conn, slurmdb_user_rec_t *user,
 		user->default_acct = found_user->default_acct;
 	if (!user->default_wckey)
 		user->default_wckey = found_user->default_wckey;
-	if (!user->name)
+	/* If preserving case, return existing user with original case. */
+	if (!user->name ||
+	    (slurmdbd_conf &&
+	     (slurmdbd_conf->persist_conn_rc_flags & PERSIST_FLAG_P_USER_CASE)))
 		user->name = found_user->name;
 	user->uid = found_user->uid;
 	if (!user->wckey_list)
@@ -3419,14 +3422,12 @@ extern int assoc_mgr_fill_in_wckey(void *db_conn, slurmdb_wckey_rec_t *wckey,
 				wckey->name = user.default_wckey;
 			else {
 				if (enforce & ACCOUNTING_ENFORCE_WCKEYS) {
-					error("User %s(%d) doesn't have a "
-					      "default wckey", user.name,
-					      user.uid);
+					error("User %s(%u) doesn't have a default wckey",
+					      user.name, user.uid);
 					return SLURM_ERROR;
 				} else {
-					debug3("User %s(%d) doesn't have a "
-					       "default wckey", user.name,
-					       user.uid);
+					debug3("User %s(%u) doesn't have a default wckey",
+					       user.name, user.uid);
 					return SLURM_SUCCESS;
 				}
 			}

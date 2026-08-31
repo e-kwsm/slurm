@@ -387,7 +387,7 @@ static bool _match_env(const data_t *data, void *needle)
 	const char *needle_name = needle;
 	char *name = NULL, *value;
 
-	if (!data_get_string_converted(data, &name)) {
+	if (data_get_string_converted(data, &name)) {
 		xfree(name);
 		return false;
 	}
@@ -398,6 +398,10 @@ static bool _match_env(const data_t *data, void *needle)
 		*value = '\0';
 
 	match = !xstrcmp(name, needle_name);
+
+	if (match)
+		debug3("%s: collapsing duplicate %s in /process/env",
+		       __func__, name);
 
 	xfree(name);
 
@@ -841,7 +845,7 @@ error:
 	return rc;
 }
 
-static data_t *_get_container_state()
+static data_t *_get_container_state(void)
 {
 	int rc = SLURM_ERROR;
 	data_t *state = NULL;
@@ -877,7 +881,7 @@ static data_t *_get_container_state()
 	return state;
 }
 
-static char *_get_container_status()
+static char *_get_container_status(void)
 {
 	char *state = NULL;
 	data_t *dstate = _get_container_state();
@@ -891,7 +895,7 @@ static char *_get_container_status()
 	return state;
 }
 
-static void _kill_container()
+static void _kill_container(void)
 {
 	int stime = 2500;
 	char *status = NULL;

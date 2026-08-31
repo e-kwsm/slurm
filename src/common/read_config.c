@@ -2129,25 +2129,25 @@ static void _free_name_hashtbl(void)
 	nodehash_initialized = false;
 }
 
+/*
+ * Hash a name into one of the NAME_HASH_LEN buckets.
+ *
+ * Based on the FNV-1a algorithm.
+ * See http://www.isthe.com/chongo/tech/comp/fnv/index.html
+ */
 static int _get_hash_idx(const char *name)
 {
-	int index = 0;
-	int j;
+	uint32_t hash = 2166136261u; /* FNV-1a 32-bit offset basis */
 
 	if (name == NULL)
 		return 0;	/* degenerate case */
 
-	/* Multiply each character by its numerical position in the
-	 * name string to add a bit of entropy, because host names such
-	 * as cluster[0001-1000] can cause excessive index collisions.
-	 */
-	for (j = 1; *name; name++, j++)
-		index += (int)*name * j;
-	index %= NAME_HASH_LEN;
-	while (index < 0) /* Coverity thinks "index" could be negative with "if" */
-		index += NAME_HASH_LEN;
+	while (*name) {
+		hash ^= (unsigned char) *name++;
+		hash *= 16777619u; /* FNV-1a 32-bit prime */
+	}
 
-	return index;
+	return hash % NAME_HASH_LEN;
 }
 
 static void _push_to_hashtbls(char *alias, char *hostname, char *address,
@@ -2373,7 +2373,8 @@ extern char *slurm_conf_get_aliases(const char *node_hostname)
 }
 
 /*
- * slurm_conf_get_nodeaddr - Return the NodeAddr for given NodeHostname
+ * slurm_conf_get_nodeaddr - Return the NodeAddr for a given NodeHostname
+ *	or NodeName
  *
  * NOTE: Call xfree() to release returned value's memory.
  * NOTE: Caller must NOT be holding slurm_conf_lock().
@@ -2389,17 +2390,22 @@ extern char *slurm_conf_get_nodeaddr(const char *node_hostname)
 
 	p = host_to_node_hashtbl[idx];
 	while (p) {
-		if (!xstrcmp(p->hostname, node_hostname) ||
-		    !xstrcmp(p->alias, node_hostname)) {
-			char *nodeaddr;
-			if (p->address != NULL)
-				nodeaddr = xstrdup(p->address);
-			else
-				nodeaddr = NULL;
+		if (!xstrcmp(p->hostname, node_hostname)) {
+			char *nodeaddr = xstrdup(p->address);
 			slurm_conf_unlock();
 			return nodeaddr;
 		}
 		p = p->next_hostname;
+	}
+
+	p = node_to_host_hashtbl[idx];
+	while (p) {
+		if (!xstrcmp(p->alias, node_hostname)) {
+			char *nodeaddr = xstrdup(p->address);
+			slurm_conf_unlock();
+			return nodeaddr;
+		}
+		p = p->next_alias;
 	}
 	slurm_conf_unlock();
 
@@ -3794,7 +3800,7 @@ static int _sort_plugins_by_name(void *x, void *y)
 	return xstrcmp(s2, s1);
 }
 
-static int _validate_conf_nodeset_vs_nodenames()
+static int _validate_conf_nodeset_vs_nodenames(void)
 {
 	slurm_conf_node_t **ptr_nname;
 	slurm_conf_nodeset_t **ptr_nset;

@@ -1285,7 +1285,8 @@ int main(int argc, char **argv)
 }
 #endif
 
-	http_fini();
+	if (http_switch_http_enabled())
+		http_fini();
 	http_switch_fini();
 	workerpool_fini();
 	/* Multiple threads never exit naturally during shutdown */
@@ -2540,7 +2541,7 @@ static void _update_cluster_tres(void)
 	unlock_slurmctld(job_write_lock);
 }
 
-static void _update_parts_and_resvs()
+static void _update_parts_and_resvs(void)
 {
 	update_assocs_in_resvs();
 	part_list_update_assoc_lists();
